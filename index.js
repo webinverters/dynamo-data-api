@@ -9,4 +9,4 @@
  * @license Apache-2.0
  */
 
-require('./src/data-api');
+module.export = require('./src/data-api');
