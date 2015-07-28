@@ -9,4 +9,4 @@
  * @license Apache-2.0
  */
 
-require('./src/node-quickstart.js');
+require('./src/data-api');

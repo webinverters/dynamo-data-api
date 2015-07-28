@@ -1,7 +1,7 @@
 {
-  "name": "lib-base",
+  "name": "dynamo-data-api",
   "version": "0.0.1",
-  "description": "",
+  "description": "Provides a simple js interface for dynamo.",
   "main": "index.js",
   "scripts": {
     "test": "make all",
@@ -19,21 +19,28 @@
   },
   "homepage": "https://github.com/webinverters/lib-base",
   "devDependencies": {
+    "aws-sdk": "^2.1.40",
     "chai": "^1.x.x",
     "chai-as-promised": "^4.1.1",
     "coveralls": "2.11.2",
     "docme": "^0.2.1",
-    "gulp-jsdoc": "^0.1.4",
     "gulp": "^3.8.11",
     "gulp-bump": "^0.3.0",
     "gulp-filter": "^2.0.2",
     "gulp-git": "^1.1.0",
+    "gulp-jsdoc": "^0.1.4",
     "gulp-tag-version": "^1.2.1",
     "istanbul": "0.3.7",
     "mocha": "2.2.1",
     "mocha-lcov-reporter": "0.0.2",
     "sinon": "^1.14.1",
     "sinon-as-promised": "^2.0.3",
-    "sinon-chai": "^2.6.0"
+    "sinon-chai": "^2.6.0",
+    "win-common": "0.0.38"
+  },
+  "dependencies": {
+    "bluebird": "^2.9.34",
+    "dynamite": "^0.6.16",
+    "lodash": "^3.10.0"
   }
 }
