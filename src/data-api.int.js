@@ -138,10 +138,11 @@ describe('data-api', function() {
 
   describe('scan(tableName, params)', function() {
     it('it returns params.limit rows', function() {
-      return m.scan('log', {limit: 10})
+      return m.scan('udf-queue', {limit: 10})
         .then(function(rows) {
+          //console.log('ROWS:', rows);
           expect(rows.length).to.equal(10);
-        })
+        });
     });
   });
 });

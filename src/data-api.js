@@ -30,6 +30,9 @@ module.exports = function construct(config, logger) {
   var Dynamite = require('dynamite');
   var dynamite = new Dynamite.Client(config.aws);
 
+  var awsClient = new AWS.DynamoDB();
+  var docClient = new require('dynamodb-doc').DynamoDB(awsClient);
+
   /**
    * Stores data about tables in the database so that keys and indexes can be queried effectively.
    * @type {{}}
@@ -69,8 +72,7 @@ module.exports = function construct(config, logger) {
    * @returns {*}
    */
   m.insert = function(table, params) {
-    console.log('DYNAMO-API: inserting:', params);
-
+    //console.log('DYNAMO-API: inserting:', params);
     var query = dynamite.putItem(table, params.item ? params.item : params);
 
     return executeQuery(query);
@@ -82,13 +84,26 @@ module.exports = function construct(config, logger) {
   };
 
   m.scan = function(table, params) {
-    var query = dynamite.newScanBuilder(table);
-    if(params.limit) {
-      query.setLimit(params.limit);
-    }
-    return executeQuery(query, function(result) {
-      return result.result;
+    //var query = dynamite.newScanBuilder(table);
+    //if(params.limit) {
+    //  query.setLimit(params.limit);
+    //}
+    //return executeQuery(query, function(result) {
+    //  return result.result;
+    //});
+
+    var def = p.defer();
+    docClient.scan({
+      TableName: table,
+      Limit: params.limit
+    }, function(err, data) {
+      if (err) return def.reject(err);
+      else     {
+        def.resolve(data.Items);
+        console.log(data);
+      }           // successful response
     });
+    return def.promise;
   };
 
   m.query = function(table, filter) {
