@@ -69,6 +69,8 @@ module.exports = function construct(config, logger) {
    * @returns {*}
    */
   m.insert = function(table, params) {
+    console.log('DYNAMO-API: inserting:', params);
+
     var query = dynamite.putItem(table, params.item ? params.item : params);
 
     return executeQuery(query);
