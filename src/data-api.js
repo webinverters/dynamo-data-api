@@ -62,8 +62,14 @@ module.exports = function construct(config, logger) {
       });
   };
 
+  /**
+   * Supports params itself as "item" or params = { item: {item} }
+   * @param table
+   * @param params
+   * @returns {*}
+   */
   m.insert = function(table, params) {
-    var query = dynamite.putItem(table, params.item);
+    var query = dynamite.putItem(table, params.item ? params.item : params);
 
     return executeQuery(query);
   };
