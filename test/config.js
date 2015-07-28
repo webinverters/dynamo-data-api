@@ -18,4 +18,4 @@ config.aws ={
 global.AWS = require('aws-sdk');
 AWS.config.update(config.aws);
 
-module.export = config;
+module.exports = config;
