@@ -30,8 +30,8 @@ module.exports = function construct(config, logger) {
   var Dynamite = require('dynamite');
   var dynamite = new Dynamite.Client(config.aws);
 
-
-  var awsClient = new require('aws-sdk').DynamoDB();
+  var aws = require('aws-sdk');
+  var awsClient = new aws.DynamoDB();
   var docClient = new require('dynamodb-doc').DynamoDB(awsClient);
 
   /**
