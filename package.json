@@ -39,6 +39,7 @@
     "win-common": "0.0.38"
   },
   "dependencies": {
+    "aws-sdk": "^2.1.41",
     "bluebird": "^2.9.34",
     "dynamite": "^0.6.16",
     "dynamodb-doc": "^1.0.0",

@@ -145,4 +145,14 @@ describe('data-api', function() {
         });
     });
   });
+
+  describe('getRowCount(tableName, filters)', function() {
+    it('it returns the row count.', function() {
+      return m.getRowCount('udf-queue')
+        .then(function(rowCount) {
+          console.log('ROWS:', rowCount);
+          expect(rowCount).to.equal(10);
+        });
+    });
+  });
 });

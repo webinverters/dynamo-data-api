@@ -30,7 +30,8 @@ module.exports = function construct(config, logger) {
   var Dynamite = require('dynamite');
   var dynamite = new Dynamite.Client(config.aws);
 
-  var awsClient = new AWS.DynamoDB();
+
+  var awsClient = new require('aws-sdk').DynamoDB();
   var docClient = new require('dynamodb-doc').DynamoDB(awsClient);
 
   /**
@@ -120,6 +121,25 @@ module.exports = function construct(config, logger) {
           else return null;
         });
       });
+  };
+
+  m.getRowCount = function(table, params) {
+    logger.debug('Starting getRowCount()...');
+
+    var def = p.defer();
+
+    awsClient.scan({
+      TableName: table,
+      ProjectionExpression: 'goalId' || params
+    }, function(err, result) {
+      if (err) {
+        def.reject(err);
+      }
+      else {
+        def.resolve(result.Count);
+      }
+    });
+    return def.promise;
   };
 
   m.find = function(table, filter) {
