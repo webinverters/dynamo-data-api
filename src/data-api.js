@@ -93,7 +93,7 @@ module.exports = function construct(config, log) {
     //  return result.result;
     //});
 
-    params = _.defaults(params, {
+    params = _.defaults(params || {}, {
       limit: 1000
     });
 
