@@ -67,13 +67,6 @@ module.exports = function construct(config, log) {
   };
 
 
-  function fixForDynamite(obj) {
-    _.each(obj, function(property, key) {
-      if (_.isObject(property)) {
-        obj[key] = JSON.stringify(property);
-      }
-    });
-  }
   /**
    * Supports params itself as "item" or params = { item: {item} }
    * @param table
@@ -82,15 +75,17 @@ module.exports = function construct(config, log) {
    */
   m.insert = function(table, params) {
     log('dynamo.insert()', table, params);
-
-
-    if (_.isObject(params)) {
-      fixForDynamite(params.item || params);
-    }
-
-    var query = dynamite.putItem(table, params.item ? params.item : params);
-
-    return executeQuery(query);
+    var def = p.defer();
+    docClient.putItem({
+      TableName: table,
+      Limit: params.item || params
+    }, function(err, data) {
+      if (err) return def.reject(err);
+      else     {
+        def.resolve(data);
+      }
+    });
+    return def.promise;
   };
   m.save = m.insert;
 
