@@ -21,12 +21,12 @@ var p = require('bluebird'),
   _ = require('lodash');
 
 
-module.exports = function construct(config, logger) {
+module.exports = function construct(config, log) {
   var m = {};
   config = config ? config : {};
   config = _.defaults(config, {});
 
-  logger = logger || {log: _.empty, error: _.empty};
+  log = log || {log: _.empty, error: _.empty};
   var Dynamite = require('dynamite');
   var dynamite = new Dynamite.Client(config.aws);
 
@@ -44,7 +44,7 @@ module.exports = function construct(config, logger) {
     var query = dynamite.newUpdateBuilder(table);
     return m.init(table)
       .then(function(tableMeta) {
-        logger.debug('Processing filters...');
+        log.debug('Processing filters...');
         processFilter(tableMeta, query, filter);
         query.enableUpsert();
         _.each(item, function(val, key) {
@@ -73,7 +73,7 @@ module.exports = function construct(config, logger) {
    * @returns {*}
    */
   m.insert = function(table, params) {
-    //console.log('DYNAMO-API: inserting:', params);
+    log('dynamo.insert()', table, params);
     var query = dynamite.putItem(table, params.item ? params.item : params);
 
     return executeQuery(query);
@@ -93,6 +93,10 @@ module.exports = function construct(config, logger) {
     //  return result.result;
     //});
 
+    params = _.defaults(params, {
+      limit: 1000
+    });
+
     var def = p.defer();
     docClient.scan({
       TableName: table,
@@ -108,11 +112,11 @@ module.exports = function construct(config, logger) {
   };
 
   m.query = function(table, filter) {
-    logger.debug('Starting query...');
+    log.debug('Starting query...');
     var query = dynamite.newQueryBuilder(table);
     return m.init(table)
       .then(function(tableMeta) {
-        logger.debug('Processing filters...');
+        log.debug('Processing filters...');
         processFilter(tableMeta, query, filter);
         // optional. Checkout `QueryBuilder.js` for all supported comp operators.
         // .indexLessThan('GSI range key name', value)
@@ -124,7 +128,7 @@ module.exports = function construct(config, logger) {
   };
 
   m.getRowCount = function(table, params) {
-    logger.debug('Starting getRowCount()...');
+    log.debug('Starting getRowCount()...');
 
     var def = p.defer();
 
@@ -143,11 +147,11 @@ module.exports = function construct(config, logger) {
   };
 
   m.find = function(table, filter) {
-    logger.debug('Starting find...');
+    log.debug('Starting find...');
     var query = dynamite.newQueryBuilder(table);
     return m.init(table)
       .then(function(tableMeta) {
-        logger.debug('Processing filters...');
+        log.debug('Processing filters...');
         processFilter(tableMeta, query, filter);
         // optional. Checkout `QueryBuilder.js` for all supported comp operators.
         // .indexLessThan('GSI range key name', value)
@@ -171,7 +175,7 @@ module.exports = function construct(config, logger) {
   };
 
   function recoverInfoAboutTable(tableName) {
-    logger.log('describeTable: ', tableName);
+    log.log('describeTable: ', tableName);
     return dynamite.describeTable(tableName)
       .execute()
       .then(function(result) {
@@ -186,7 +190,7 @@ module.exports = function construct(config, logger) {
         //    ProvisionedThroughput: [Object] } ],
         //    ItemCount: 0,
         //  KeySchema: [ { AttributeName: 'email', KeyType: 'HASH' } ],
-        //logger.log('Table Meta:', result.Table.GlobalSecondaryIndexes[0]);
+        //log.log('Table Meta:', result.Table.GlobalSecondaryIndexes[0]);
         table.hash = _.result(_.find(result.Table.KeySchema, {KeyType: 'HASH'}), 'AttributeName');
         table.range = _.result(_.find(result.Table.KeySchema, {KeyType: 'RANGE'}), 'AttributeName');
         _.each(result.Table.GlobalSecondaryIndexes, function(index) {
@@ -194,7 +198,7 @@ module.exports = function construct(config, logger) {
         });
 
         config.tables[tableName] = table;
-        logger.log('MetaTable:', tableName, table);
+        log.log('MetaTable:', tableName, table);
         return table;
       });
   }
@@ -212,16 +216,16 @@ module.exports = function construct(config, logger) {
   }
 
   function executeQuery(q, resultAdapter) {
-    logger.debug('Executing query...');
+    log.debug('Executing query...');
     var def = p.defer();
     q.execute()
       .then(function(result) {
-        logger.debug('Query finished:', result);
+        log.debug('Query finished:', result);
         if (resultAdapter) def.resolve(resultAdapter(result));
         return def.resolve(result);
       })
       .fail(function(err) {
-        logger.debug('Query failed.', err);
+        log.debug('Query failed.', err);
         return def.reject(err);
       });
     return def.promise;
