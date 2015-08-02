@@ -78,11 +78,11 @@ module.exports = function construct(config, log) {
     var def = p.defer();
     docClient.putItem({
       TableName: table,
-      Limit: params.item || params
+      Item: params.item || params
     }, function(err, data) {
       if (err) return def.reject(err);
       else     {
-        def.resolve(data);
+        def.resolve(true);
       }
     });
     return def.promise;
@@ -229,7 +229,7 @@ module.exports = function construct(config, log) {
     var def = p.defer();
     q.execute()
       .then(function(result) {
-        log.debug('Query finished:', result);
+        log.debug('Query finished:', {QUERY_RESULT: result});
         if (resultAdapter) def.resolve(resultAdapter(result));
         return def.resolve(result);
       })

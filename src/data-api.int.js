@@ -51,8 +51,9 @@ describe('data-api', function() {
 
   beforeEach(function () {
     item = {name: 'testname', date: '1000' };
-    console.debug = console.log;
-    m = ModuleUnderTest(global.config, console);
+    m = ModuleUnderTest(global.config, require('win-with-logs')(
+      {enableTrackedEvents: false, name: 'dynamo-data-api', env: 'test', app: 'dynamo-data-api', debug: true}
+    ));
   });
 
   before(function() {
