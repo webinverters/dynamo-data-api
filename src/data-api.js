@@ -127,6 +127,16 @@ module.exports = function construct(config, log) {
       .then(function(tableMeta) {
         log.debug('Processing filters...');
         processFilter(tableMeta, query, filter);
+        if (filter.limit) {
+          query.setLimit(filter.limit);
+        }
+        if (filter.sort == 'desc') {
+          query.scanBackward();
+        }
+        if (filter.sort == 'asc') {
+          query.scanForward();
+        }
+
         // optional. Checkout `QueryBuilder.js` for all supported comp operators.
         // .indexLessThan('GSI range key name', value)
         return executeQuery(query, function(result) {
