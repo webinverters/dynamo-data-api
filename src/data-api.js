@@ -32,6 +32,7 @@ module.exports = function construct(config, log) {
 
   var aws = global.AWS || require('aws-sdk');
   var awsClient = new aws.DynamoDB();
+  var dynamo = awsClient;
   var docClient = new require('dynamodb-doc').DynamoDB(awsClient);
 
   /**
@@ -221,6 +222,43 @@ module.exports = function construct(config, log) {
         return table;
       });
   }
+
+  m.createTable = function(table) {
+    var opts = {
+      TableName: table.tableName,
+      AttributeDefinitions: [],
+      KeySchema: [],
+      ProvisionedThroughput: {ReadCapacityUnits: 1, WriteCapacityUnits: 1}
+    };
+    _.each(table.keySchema, function(attr) {
+      opts.AttributeDefinitions.push({
+        AttributeName: attr.name,
+        AttributeType: attr.type
+      });
+      opts.KeySchema.push({
+        AttributeName: attr.name,
+        KeyType: attr.keyType
+      });
+    });
+
+    var def = p.defer();
+
+    dynamo.createTable(opts, function(err, r) {
+      if (err) return def.reject(err);
+      return def.resolve(r);
+    });
+
+    return def.promise;
+  };
+
+  m.deleteTable = function(tableName) {
+    var def = p.defer();
+    dynamo.deleteTable({TableName: tableName}, function(err, r) {
+      if (err) return def.reject(err);
+      return def.resolve(r);
+    });
+    return def.promise;
+  };
 
   /**
    * executeQueryOne: resolves the first row returned from the query results.
