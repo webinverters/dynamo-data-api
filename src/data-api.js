@@ -230,6 +230,7 @@ module.exports = function construct(config, log) {
       KeySchema: [],
       ProvisionedThroughput: {ReadCapacityUnits: 1, WriteCapacityUnits: 1}
     };
+
     _.each(table.keySchema, function(attr) {
       opts.AttributeDefinitions.push({
         AttributeName: attr.name,
@@ -295,7 +296,13 @@ module.exports = function construct(config, log) {
         query.setHashKey(key, val);
       }
       if (table.range == key) {
-        query.setRangeKey(key, val);
+        if (_isObject(val)) {
+          if (val['LESS_THAN_OR_EQUAL']) {
+            query.indexLessThanEqual(key, val['LESS_THAN_OR_EQUAL']);
+          }
+        } else {
+          query.setRangeKey(key, val);
+        }
       }
       if (table.gsi[key]) {
         query.setIndexName(key+'-index');
