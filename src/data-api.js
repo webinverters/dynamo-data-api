@@ -296,7 +296,7 @@ module.exports = function construct(config, log) {
         query.setHashKey(key, val);
       }
       if (table.range == key) {
-        if (_isObject(val)) {
+        if (_.isObject(val)) {
           if (val['LESS_THAN_OR_EQUAL']) {
             query.indexLessThanEqual(key, val['LESS_THAN_OR_EQUAL']);
           }
