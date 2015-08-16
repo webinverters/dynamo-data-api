@@ -352,30 +352,39 @@ module.exports = function construct(config, log) {
 
   function processFilter(table, query, filter) {
     _.each(filter, function(val, key) {
-      if (table.hash == key) {
-        log.log('SETTING HASH', key, val);
-        query.setHashKey(key, val);
-      }
-      if (table.range == key) {
-        if (_.isObject(val)) {
-          if (val['LESS_THAN_OR_EQUAL']) {
-            query.indexLessThanEqual(key, val['LESS_THAN_OR_EQUAL']);
-          }
-        } else {
-          query.setRangeKey(key, val);
-        }
-      }
+      var gsiUsed = false;
       _.each(table.gsi, function(gsi) {
+        var hashUsed=false;
         if (key == gsi.hash) {
+          hashUsed = true;
+          if (!gsi.range) {
+            gsiUsed = true;
+          }
           log.debug('ADDING GSI.HASH', gsi.hash, gsi.indexName)
           query.setIndexName(gsi.indexName);
           query.setHashKey(key, val);
         } else if (key==gsi.range) {
+          if (hashUsed) gsiUsed = true;
           log.debug('ADDING GSI.RANGE', gsi.range, gsi.indexName)
           query.setRangeKey(key, val);
         }
       });
 
+      if (!gsiUsed) {
+        if (table.hash == key) {
+          log.log('SETTING HASH', key, val);
+          query.setHashKey(key, val);
+        }
+        if (table.range == key) {
+          if (_.isObject(val)) {
+            if (val['LESS_THAN_OR_EQUAL']) {
+              query.indexLessThanEqual(key, val['LESS_THAN_OR_EQUAL']);
+            }
+          } else {
+            query.setRangeKey(key, val);
+          }
+        }
+      }
       // optional. Checkout `QueryBuilder.js` for all supported comp operators.
       // .indexLessThan('GSI range key name', value)
     });
