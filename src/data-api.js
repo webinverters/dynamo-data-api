@@ -231,11 +231,17 @@ module.exports = function construct(config, log) {
       ProvisionedThroughput: {ReadCapacityUnits: 1, WriteCapacityUnits: 1}
     };
 
+    var attributeNames = {};
+
     _.each(table.keySchema, function(attr) {
-      opts.AttributeDefinitions.push({
-        AttributeName: attr.name,
-        AttributeType: attr.type
-      });
+      if (!attributeNames[attr.name]) {
+        attributeNames[attr.name] = 1;
+        opts.AttributeDefinitions.push({
+          AttributeName: attr.name,
+          AttributeType: attr.type
+        });
+      }
+
       opts.KeySchema.push({
         AttributeName: attr.name,
         KeyType: attr.keyType
@@ -269,16 +275,22 @@ module.exports = function construct(config, log) {
           "AttributeName": attrs.range,
           "KeyType": 'RANGE'
         });
-        opts.AttributeDefinitions.push({
-          AttributeName: attrs.range,
-          AttributeType: attrs.rangeType
-        });
+        if (!attributeNames[attr.name]) {
+          attributeNames[attr.name] = 1;
+          opts.AttributeDefinitions.push({
+            AttributeName: attrs.range,
+            AttributeType: attrs.rangeType
+          });
+        }
       }
 
-      opts.AttributeDefinitions.push({
-        AttributeName: attrs.hash,
-        AttributeType: attrs.hashType
-      });
+      if (!attributeNames[attr.name]) {
+        attributeNames[attr.name] = 1;
+        opts.AttributeDefinitions.push({
+          AttributeName: attrs.hash,
+          AttributeType: attrs.hashType
+        });
+      }
 
       opts.GlobalSecondaryIndexes.push(gsi);
     });
