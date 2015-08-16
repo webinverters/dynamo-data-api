@@ -242,6 +242,38 @@ module.exports = function construct(config, log) {
       });
     });
 
+    _.each(table,gsiSchema, function(attrs) {
+      opts.GlobalSecondaryIndexes = opts.GlobalSecondaryIndexes || [];
+      var gsi = {
+        "IndexName": attrs.name,
+        "KeySchema": [
+          {
+            "AttributeName": attrs.hash,
+            "KeyType": attrs.hashType
+          }
+        ],
+        "Projection": {
+          //"NonKeyAttributes": [
+          //  "string"
+          //],
+          "ProjectionType": attrs.projectionType || 'KEYS_ONLY'
+        },
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": attrs.readUnits,
+          "WriteCapacityUnits": attrs.writeUnits
+        }
+      };
+
+      if (attrs.range) {
+        gsi.KeySchema.push({
+          "AttributeName": attrs.range,
+          "KeyType": attrs.rangeType
+        });
+      }
+
+      opts.GlobalSecondaryIndexes.push(gsi);
+    });
+
     var def = p.defer();
 
     dynamo.createTable(opts, function(err, r) {
