@@ -367,9 +367,11 @@ module.exports = function construct(config, log) {
       }
       _.each(table.gsi, function(gsi) {
         if (key == gsi.hash) {
+          log.debug('ADDING GSI.HASH', gsi.hash, gsi.indexName)
           query.setIndexName(gsi.indexName);
           query.setHashKey(key, val);
         } else if (key==gsi.range) {
+          log.debug('ADDING GSI.RANGE', gsi.range, gsi.indexName)
           query.setRangeKey(key, val);
         }
       });
