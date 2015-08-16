@@ -242,7 +242,7 @@ module.exports = function construct(config, log) {
       });
     });
 
-    _.each(table,gsiSchema, function(attrs) {
+    _.each(table.gsiSchema, function(attrs) {
       opts.GlobalSecondaryIndexes = opts.GlobalSecondaryIndexes || [];
       var gsi = {
         "IndexName": attrs.name,
