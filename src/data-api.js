@@ -75,7 +75,7 @@ module.exports = function construct(config, log) {
    * @returns {*}
    */
   m.insert = function(table, params) {
-    log('dynamo.insert()', table, params);
+    log.log('dynamo.insert()', table, params);
     var def = p.defer();
     docClient.putItem({
       TableName: table,
@@ -199,7 +199,7 @@ module.exports = function construct(config, log) {
     return dynamite.describeTable(tableName)
       .execute()
       .then(function(result) {
-        var table = {gsi:{}};
+        var table = {gsi:[]};
         //GlobalSecondaryIndexes:
         //  [ { IndexName: 'userId-index',
         //    IndexSizeBytes: 0,
@@ -214,11 +214,19 @@ module.exports = function construct(config, log) {
         table.hash = _.result(_.find(result.Table.KeySchema, {KeyType: 'HASH'}), 'AttributeName');
         table.range = _.result(_.find(result.Table.KeySchema, {KeyType: 'RANGE'}), 'AttributeName');
         _.each(result.Table.GlobalSecondaryIndexes, function(index) {
-          table.gsi[index.IndexName.replace('-index','')] = true
+          var gsi = {indexName: index.IndexName };
+          _.each(index.KeySchema, function(key) {
+            if (key.KeyType == 'HASH') {
+              gsi.hash = key;
+            } else if (key.KeyType == 'RANGE') {
+              gsi.range = key;
+            }
+          });
+          table.gsi.push(gsi);
         });
 
         config.tables[tableName] = table;
-        log.log('MetaTable:', tableName, table);
+        log.log('MetaTable:', JSON.stringify(table));
         return table;
       });
   }
@@ -345,7 +353,7 @@ module.exports = function construct(config, log) {
   function processFilter(table, query, filter) {
     _.each(filter, function(val, key) {
       if (table.hash == key) {
-        console.log('SETTING HASH', key, val);
+        log.log('SETTING HASH', key, val);
         query.setHashKey(key, val);
       }
       if (table.range == key) {
@@ -357,10 +365,15 @@ module.exports = function construct(config, log) {
           query.setRangeKey(key, val);
         }
       }
-      if (table.gsi[key]) {
-        query.setIndexName(key+'-index');
-        query.setHashKey(key, val);
-      }
+      _.each(table.gsi, function(gsi) {
+        if (key == gsi.hash) {
+          query.setIndexName(gsi.indexName);
+          query.setHashKey(key, val);
+        } else if (key==gsi.range) {
+          query.setRangeKey(key, val);
+        }
+      });
+
       // optional. Checkout `QueryBuilder.js` for all supported comp operators.
       // .indexLessThan('GSI range key name', value)
     });

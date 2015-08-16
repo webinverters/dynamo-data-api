@@ -1,7 +1,12 @@
+if (!process.env.NODE_ENV) {
+  require('dotenv').load();
+}
+
 require('win-common')({
   useTestGlobals: true
 });
 
+console.log('FUCKERS', process.env.AWS_KEY);
 global.config = {};
 config.aws ={
   region: "us-east-1",
