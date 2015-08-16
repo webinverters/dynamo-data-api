@@ -249,7 +249,7 @@ module.exports = function construct(config, log) {
         "KeySchema": [
           {
             "AttributeName": attrs.hash,
-            "KeyType": attrs.hashType
+            "KeyType": 'HASH'
           }
         ],
         "Projection": {
@@ -267,9 +267,18 @@ module.exports = function construct(config, log) {
       if (attrs.range) {
         gsi.KeySchema.push({
           "AttributeName": attrs.range,
-          "KeyType": attrs.rangeType
+          "KeyType": 'RANGE'
+        });
+        opts.AttributeDefinitions.push({
+          AttributeName: attrs.range,
+          AttributeType: attrs.rangeType
         });
       }
+
+      opts.AttributeDefinitions.push({
+        AttributeName: attrs.hash,
+        AttributeType: attrs.hashType
+      });
 
       opts.GlobalSecondaryIndexes.push(gsi);
     });
