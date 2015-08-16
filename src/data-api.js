@@ -275,8 +275,8 @@ module.exports = function construct(config, log) {
           "AttributeName": attrs.range,
           "KeyType": 'RANGE'
         });
-        if (!attributeNames[attrs.name]) {
-          attributeNames[attrs.name] = 1;
+        if (!attributeNames[attrs.range]) {
+          attributeNames[attrs.range] = 1;
           opts.AttributeDefinitions.push({
             AttributeName: attrs.range,
             AttributeType: attrs.rangeType
@@ -284,8 +284,8 @@ module.exports = function construct(config, log) {
         }
       }
 
-      if (!attributeNames[attrs.name]) {
-        attributeNames[attrs.name] = 1;
+      if (!attributeNames[attrs.hash]) {
+        attributeNames[attrs.hash] = 1;
         opts.AttributeDefinitions.push({
           AttributeName: attrs.hash,
           AttributeType: attrs.hashType
