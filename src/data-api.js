@@ -267,7 +267,6 @@ module.exports = function construct(config, log) {
           }
         ],
         "Projection": {
-          "NonKeyAttributes": attrs.includeAttributes,
           "ProjectionType": attrs.projectionType || 'KEYS_ONLY'
         },
         "ProvisionedThroughput": {
@@ -275,6 +274,9 @@ module.exports = function construct(config, log) {
           "WriteCapacityUnits": attrs.writeUnits
         }
       };
+      if (gsi.Projection.ProjectionType=='INCLUDE') {
+        gsi.Projection["NonKeyAttributes"] = attrs.includeAttributes;
+      }
 
       if (attrs.range) {
         gsi.KeySchema.push({
