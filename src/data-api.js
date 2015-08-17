@@ -267,9 +267,7 @@ module.exports = function construct(config, log) {
           }
         ],
         "Projection": {
-          //"NonKeyAttributes": [
-          //  "string"
-          //],
+          "NonKeyAttributes": attrs.includeAttributes,
           "ProjectionType": attrs.projectionType || 'KEYS_ONLY'
         },
         "ProvisionedThroughput": {
@@ -355,7 +353,7 @@ module.exports = function construct(config, log) {
       var gsiUsed = false;
       _.each(table.gsi, function(gsi) {
         var hashUsed=false;
-        if (key == gsi.hash) {
+        if (key == gsi.hash.AttributeName) {
           hashUsed = true;
           if (!gsi.range) {
             gsiUsed = true;
@@ -363,7 +361,7 @@ module.exports = function construct(config, log) {
           log.debug('ADDING GSI.HASH', gsi.hash, gsi.indexName)
           query.setIndexName(gsi.indexName);
           query.setHashKey(key, val);
-        } else if (key==gsi.range) {
+        } else if (key==gsi.range.AttributeName) {
           if (hashUsed) gsiUsed = true;
           log.debug('ADDING GSI.RANGE', gsi.range, gsi.indexName)
           query.setRangeKey(key, val);
