@@ -121,7 +121,7 @@ module.exports = function construct(config, log) {
     return def.promise;
   };
 
-  m.query = function(table, filter) {
+  m.query = function(table, filter, selection) {
     log.debug('Starting query...');
     var query = dynamite.newQueryBuilder(table);
     return m.init(table)
@@ -137,6 +137,8 @@ module.exports = function construct(config, log) {
         if (filter.sort == 'asc') {
           query.scanForward();
         }
+
+        if (selection) query.selectAttributes(selection);
 
         // optional. Checkout `QueryBuilder.js` for all supported comp operators.
         // .indexLessThan('GSI range key name', value)
@@ -166,13 +168,14 @@ module.exports = function construct(config, log) {
     return def.promise;
   };
 
-  m.find = function(table, filter) {
+  m.find = function(table, filter, selection) {
     log.debug('Starting find...');
     var query = dynamite.newQueryBuilder(table);
     return m.init(table)
       .then(function(tableMeta) {
         log.debug('Processing filters...');
         processFilter(tableMeta, query, filter);
+        if (selection) query.selectAttributes(selection);
         // optional. Checkout `QueryBuilder.js` for all supported comp operators.
         // .indexLessThan('GSI range key name', value)
         return executeQueryOne(query);
