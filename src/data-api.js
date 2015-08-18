@@ -417,22 +417,22 @@ module.exports = function construct(config, log) {
   function docFilter(table, query, filter) {
     _.each(filter, function(val, key) {
       var gsiUsed = false;
-      //_.each(table.gsi, function(gsi) {
-      //  var hashUsed=false;
-      //  if (key == gsi.hash.AttributeName) {
-      //    hashUsed = true;
-      //    if (!gsi.range) {
-      //      gsiUsed = true;
-      //    }
-      //    log.debug('ADDING GSI.HASH', gsi.hash, gsi.indexName)
-      //    query.setIndexName(gsi.indexName);
-      //    query.setHashKey(key, val);
-      //  } else if (key==gsi.range.AttributeName) {
-      //    if (hashUsed) gsiUsed = true;
-      //    log.debug('ADDING GSI.RANGE', gsi.range, gsi.indexName)
-      //    query.setRangeKey(key, val);
-      //  }
-      //});
+      _.each(table.gsi, function(gsi) {
+        var hashUsed=false;
+        if (key == gsi.hash.AttributeName) {
+          hashUsed = true;
+          if (!gsi.range) {
+            gsiUsed = true;
+          }
+          log.debug('ADDING GSI.HASH', gsi.hash, gsi.indexName)
+          query.IndexName = gsi.indexName;
+          query.KeyConditions.push(docClient.Condition(key, 'EQ', val));
+        } else if (key==gsi.range.AttributeName) {
+          if (hashUsed) gsiUsed = true;
+          log.debug('ADDING GSI.RANGE', gsi.range, gsi.indexName)
+          query.KeyConditions.push(docClient.Condition(key, 'EQ', val))
+        }
+      });
 
       if (!gsiUsed) {
         if (table.hash == key) {
