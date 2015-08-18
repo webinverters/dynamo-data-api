@@ -91,7 +91,10 @@ module.exports = function construct(config, log) {
   m.save = m.insert;
 
   m.insertMany = function(table, items) {
-
+    // TODO: implement using BatchWriteItem
+    return p.map(items, function(item) {
+      return m.insert(table, item);
+    });
   };
 
   m.scan = function(table, params) {
@@ -150,13 +153,12 @@ module.exports = function construct(config, log) {
   };
 
   m.getRowCount = function(table, params) {
-    log.debug('Starting getRowCount()...');
+    log.debug('Starting getRowCount()...', table, params);
 
     var def = p.defer();
 
     awsClient.scan({
-      TableName: table,
-      ProjectionExpression: 'goalId' || params
+      TableName: table
     }, function(err, result) {
       if (err) {
         def.reject(err);
@@ -170,15 +172,19 @@ module.exports = function construct(config, log) {
 
   m.find = function(table, filter, selection) {
     log.debug('Starting find...');
-    var query = dynamite.newQueryBuilder(table);
+    var query = {TableName: table, KeyConditions: []};
     return m.init(table)
       .then(function(tableMeta) {
         log.debug('Processing filters...');
-        processFilter(tableMeta, query, filter);
-        if (selection) query.selectAttributes(selection);
+        docFilter(tableMeta, query, filter);
+        if (selection) query.ProjectionExpression = selection;
+
         // optional. Checkout `QueryBuilder.js` for all supported comp operators.
         // .indexLessThan('GSI range key name', value)
-        return executeQueryOne(query);
+        return execute('query',query, function(result) {
+          console.log('RESULT', result);
+          return result.Items[0];
+        });
       });
   };
 
@@ -350,6 +356,21 @@ module.exports = function construct(config, log) {
         log.debug('Query failed.', err);
         return def.reject(err);
       });
+
+    return def.promise;
+  }
+
+
+  function execute(action, params, resultAdapter) {
+    log.debug('Executing', action, '...');
+    var def = p.defer();
+
+    docClient[action](params, function(err, result) {
+      console.log('DYNAMORESULT=', result);
+      if (err) return def.reject(err);
+      return def.resolve(resultAdapter ? resultAdapter(result) : result);
+    });
+
     return def.promise;
   }
 
@@ -392,6 +413,45 @@ module.exports = function construct(config, log) {
       // .indexLessThan('GSI range key name', value)
     });
   }
+
+  function docFilter(table, query, filter) {
+    _.each(filter, function(val, key) {
+      var gsiUsed = false;
+      //_.each(table.gsi, function(gsi) {
+      //  var hashUsed=false;
+      //  if (key == gsi.hash.AttributeName) {
+      //    hashUsed = true;
+      //    if (!gsi.range) {
+      //      gsiUsed = true;
+      //    }
+      //    log.debug('ADDING GSI.HASH', gsi.hash, gsi.indexName)
+      //    query.setIndexName(gsi.indexName);
+      //    query.setHashKey(key, val);
+      //  } else if (key==gsi.range.AttributeName) {
+      //    if (hashUsed) gsiUsed = true;
+      //    log.debug('ADDING GSI.RANGE', gsi.range, gsi.indexName)
+      //    query.setRangeKey(key, val);
+      //  }
+      //});
+
+      if (!gsiUsed) {
+        if (table.hash == key) {
+          log.debug('SETTING HASH', key, val);
+          query.KeyConditions.push(docClient.Condition(key, 'EQ', val));
+        }
+        if (table.range == key) {
+          if (_.isObject(val)) {
+            if (val['LESS_THAN_OR_EQUAL']) {
+              query.KeyConditions.push(docClient.Condition(key, 'LTE', val['LESS_THAN_OR_EQUAL']));
+            }
+          } else {
+            log.debug('SETTING RANGE:', key,val);
+            query.KeyConditions.push(docClient.Condition(key, 'EQ', val));
+          }
+        }
+      }
+    });
+}
 
   return m;
 };

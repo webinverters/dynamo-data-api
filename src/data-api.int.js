@@ -16,38 +16,9 @@ var p = require('bluebird'),
 
 var ModuleUnderTest = require('./data-api');
 
-function createTable(db, tableName, hashKey, rangeKey) {
-  var def = p.defer();
-  var opts = {
-    TableName: tableName,
-    AttributeDefinitions: [
-      {AttributeName: hashKey, AttributeType: "S"}
-    ],
-    KeySchema: [
-      {AttributeName: hashKey, KeyType: "HASH"}
-    ],
-    ProvisionedThroughput: {ReadCapacityUnits: 1, WriteCapacityUnits: 1}
-  };
-
-  if (rangeKey) {
-    opts.AttributeDefinitions.push({
-      AttributeName: rangeKey,
-      AttributeType: "S"
-    });
-    opts.KeySchema.push({
-      AttributeName: rangeKey,
-      KeyType: "RANGE"
-    });
-  }
-  db.createTable(opts, function(err, data) {
-    if (err) return def.reject(err);
-    return def.resolve(data);
-  });
-  return def.promise;
-}
-
 describe('data-api', function() {
   var m, item;
+  this.timeout(35000)
 
   beforeEach(function () {
     item = {name: 'testname', date: '1000' };
@@ -57,12 +28,11 @@ describe('data-api', function() {
   });
 
   before(function() {
-    return createTable(new AWS.DynamoDB(), 'test-table', 'name', 'date')
-      .catch(function(err) {
-        if (!(err.toString().indexOf('exists') >= 0)) {
-          throw err;
-        }
-      });
+    return seedTable({
+      tableName: 'test-table',
+      keySchema: [{name: 'name', type:'S', keyType: 'HASH'}, {name: 'date', type:'S', keyType: 'RANGE'}]
+    })
+      .delay(10000);
   });
 
   describe('insert(tableName, params)', function() {
@@ -139,20 +109,55 @@ describe('data-api', function() {
 
   describe('scan(tableName, params)', function() {
     it('it returns params.limit rows', function() {
-      return m.scan('udf-queue', {limit: 10})
-        .then(function(rows) {
-          //console.log('ROWS:', rows);
-          expect(rows.length).to.equal(10);
+      return m.insertMany('test-table', [
+        {name: 'testname0', date: '1001', team: 'xyz', player: 'bobby' },
+        {name: 'testname1', date: '1002' },
+        {name: 'testname2', date: '1003' },
+        {name: 'testname3', date: '1004' },
+        {name: 'testname4', date: '1005' },
+        {name: 'testname5', date: '1006' },
+        {name: 'testname6', date: '1007' },
+        {name: 'testname7', date: '1008' },
+        {name: 'testname8', date: '1009' },
+        {name: 'testname9', date: '1010' }
+      ])
+      .then(function() {
+        return m.scan('test-table', {limit: 10})
+      })
+      .then(function(rows) {
+        //console.log('ROWS:', rows);
+        expect(rows.length).to.equal(10);
+      });
+    });
+  });
+
+  describe('find(tableName, filters', function() {
+    it('finds a single item', function() {
+      return m.find('test-table', {name: 'testname0', date: '1001' })
+        .then(function(item) {
+          expect(item.name).to.equal('testname0');
+        });
+    });
+
+    it('finds with projections.', function() {
+      return m.find('test-table', {name: 'testname0', date: '1001'}, 'team')
+        .then(function(item) {
+          expect(item.team).to.equal('xyz');
+          expect(item.player).to.be.undefined;
         });
     });
   });
 
+  describe('query LESS_THAN_OR_EQUAL', function() {
+
+  });
+
   describe('getRowCount(tableName, filters)', function() {
     it('it returns the row count.', function() {
-      return m.getRowCount('udf-queue')
+      return m.getRowCount('test-table')
         .then(function(rowCount) {
           console.log('ROWS:', rowCount);
-          expect(rowCount).to.equal(10);
+          expect(rowCount).to.equal(11);
         });
     });
   });

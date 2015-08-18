@@ -6,7 +6,6 @@ require('win-common')({
   useTestGlobals: true
 });
 
-console.log('FUCKERS', process.env.AWS_KEY);
 global.config = {};
 config.aws ={
   region: "us-east-1",
@@ -24,3 +23,24 @@ global.AWS = require('aws-sdk');
 AWS.config.update(config.aws);
 
 module.exports = config;
+
+var dynamo = require('../index')(global.config, require('win-with-logs')(
+  {enableTrackedEvents: false, name: 'dynamo-data-api', env: 'test', app: 'dynamo-data-api', debug: true}
+));
+
+global.seedTable = function (table, seedData) {
+  return dynamo.createTable(table)
+    .catch(function() {
+      return dynamo.deleteTable(table.tableName)
+        .delay(10000)
+    })
+    .then(function() {
+      return dynamo.createTable(table)
+    })
+    .catch(function(err){
+      console.log(err);
+    })
+    .then(function() {
+      return dynamo.insertMany(table.tableName, seedData || []);
+    });
+};
