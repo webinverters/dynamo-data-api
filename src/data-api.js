@@ -462,11 +462,13 @@ module.exports = function construct(config, log) {
 
     query.ExpressionAttributeNames = query.ExpressionAttributeNames || {}
     query.ExpressionAttributeValues= query.ExpressionAttributeValues || {}
-    query.ExpressionAttributeNames[expressionKey] = key;
-    query.ExpressionAttributeValues[expressionVal] = val;
-    if (query.KeyConditionExpression)
-      query.KeyConditionExpression += " and " + expressionKey + " = " + expressionVal
-    else query.KeyConditionExpression = expressionKey + " = " + expressionVal
+    if (!query.ExpressionAttributeNames[expressionKey]) {
+      query.ExpressionAttributeNames[expressionKey] = key;
+      query.ExpressionAttributeValues[expressionVal] = val;
+      if (query.KeyConditionExpression)
+        query.KeyConditionExpression += " and " + expressionKey + " = " + expressionVal
+      else query.KeyConditionExpression = expressionKey + " = " + expressionVal
+    }
   }
 
   return m;
