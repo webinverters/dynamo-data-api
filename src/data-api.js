@@ -81,8 +81,9 @@ module.exports = function construct(config, log) {
       TableName: table,
       Item: params.item || params
     }, function(err, data) {
+      log.debug('dynamo-data-api.insert() RESULT:', {err:err, data:data});
       if (err) return def.reject(err);
-      else     {
+      else {
         def.resolve(true);
       }
     });
