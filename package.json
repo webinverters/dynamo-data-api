@@ -1,6 +1,6 @@
 {
   "name": "dynamo-data-api",
-  "version": "0.0.37",
+  "version": "0.0.38",
   "description": "Provides a simple js interface for dynamo.",
   "main": "index.js",
   "scripts": {
@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/webinverters/lib-base",
   "devDependencies": {
-    "aws-sdk": "^2.1.40",
+    "aws-sdk": "^2.1.41",
     "chai": "^1.x.x",
     "chai-as-promised": "^4.1.1",
     "coveralls": "2.11.2",
@@ -38,8 +38,7 @@
     "sinon-as-promised": "^2.0.3",
     "sinon-chai": "^2.6.0",
     "win-common": "0.0.38",
-    "win-with-logs": "0.0.41",
-    "aws-sdk": "^2.1.41"
+    "win-with-logs": "0.0.41"
   },
   "dependencies": {
     "bluebird": "^2.9.34",
