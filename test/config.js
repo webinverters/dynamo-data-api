@@ -24,9 +24,12 @@ AWS.config.update(config.aws);
 
 module.exports = config;
 
-var dynamo = require('../index')(global.config, require('win-with-logs')(
+global.log = require('win-with-logs')(
   {enableTrackedEvents: false, name: 'dynamo-data-api', env: 'test', app: 'dynamo-data-api', debug: true}
-));
+);
+//global.log = {log: function(){}, error: console.log, debug: function(){}};
+
+var dynamo = require('../index')(global.config, global.log);
 
 global.seedTable = function (table, seedData) {
   return dynamo.createTable(table)

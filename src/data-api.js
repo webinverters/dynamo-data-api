@@ -31,7 +31,7 @@ module.exports = function construct(config, log) {
   var dynamite = new Dynamite.Client(config.aws);
 
   var aws = global.AWS || require('aws-sdk');
-  var awsClient = new aws.DynamoDB();
+  var awsClient = new aws.DynamoDB(); // May need to pass it apiVersion: {apiVersion: '2012-08-10'}
   var dynamo = awsClient;
   var docClient = new require('dynamodb-doc').DynamoDB(awsClient);
 
@@ -172,7 +172,7 @@ module.exports = function construct(config, log) {
 
   m.find = function(table, filter, selection) {
     log.debug('Starting find...');
-    var query = {TableName: table, KeyConditions: []};
+    var query = {TableName: table};
     return m.init(table)
       .then(function(tableMeta) {
         log.debug('Processing filters...');
@@ -365,6 +365,8 @@ module.exports = function construct(config, log) {
     log.debug('Executing', action, '...');
     var def = p.defer();
 
+    log.debug('Executing Query:', params);
+
     docClient[action](params, function(err, result) {
       console.log('DYNAMORESULT=', result);
       if (err) return def.reject(err);
@@ -426,32 +428,46 @@ module.exports = function construct(config, log) {
           }
           log.debug('ADDING GSI.HASH', gsi.hash, gsi.indexName)
           query.IndexName = gsi.indexName;
-          query.KeyConditions.push(docClient.Condition(key, 'EQ', val));
+          addCondition(query, key, 'EQ', val);
         } else if (key==gsi.range.AttributeName) {
           if (hashUsed) gsiUsed = true;
           log.debug('ADDING GSI.RANGE', gsi.range, gsi.indexName)
-          query.KeyConditions.push(docClient.Condition(key, 'EQ', val))
+          addCondition(query, key, 'EQ', val)
         }
       });
 
       if (!gsiUsed) {
         if (table.hash == key) {
           log.debug('SETTING HASH', key, val);
-          query.KeyConditions.push(docClient.Condition(key, 'EQ', val));
+          addCondition(query, key, 'EQ', val)
         }
         if (table.range == key) {
           if (_.isObject(val)) {
             if (val['LESS_THAN_OR_EQUAL']) {
-              query.KeyConditions.push(docClient.Condition(key, 'LTE', val['LESS_THAN_OR_EQUAL']));
+              addCondition(query, key, 'LTE', val['LESS_THAN_OR_EQUAL']);
             }
           } else {
             log.debug('SETTING RANGE:', key,val);
-            query.KeyConditions.push(docClient.Condition(key, 'EQ', val));
+            addCondition(query, key, 'EQ', val);
           }
         }
       }
     });
 }
+
+  // assumes all the words are reserved and uses attribute names for everything...
+  function addCondition(query, key, operator, val) {
+    var expressionKey = '#'+key;
+    var expressionVal = ':'+key;
+
+    query.ExpressionAttributeNames = query.ExpressionAttributeNames || {}
+    query.ExpressionAttributeValues= query.ExpressionAttributeValues || {}
+    query.ExpressionAttributeNames[expressionKey] = key;
+    query.ExpressionAttributeValues[expressionVal] = val;
+    if (query.KeyConditionExpression)
+      query.KeyConditionExpression += " and " + expressionKey + " = " + expressionVal
+    else query.KeyConditionExpression = expressionKey + " = " + expressionVal
+  }
 
   return m;
 };

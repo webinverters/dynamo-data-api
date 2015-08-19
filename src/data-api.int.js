@@ -22,9 +22,7 @@ describe('data-api', function() {
 
   beforeEach(function () {
     item = {name: 'testname', date: '1000' };
-    m = ModuleUnderTest(global.config, require('win-with-logs')(
-      {enableTrackedEvents: false, name: 'dynamo-data-api', env: 'test', app: 'dynamo-data-api', debug: true}
-    ));
+    m = ModuleUnderTest(global.config, global.log);
   });
 
   before(function() {
