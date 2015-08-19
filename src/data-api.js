@@ -181,7 +181,6 @@ module.exports = function construct(config, log) {
     var expression = "";
 
     _.each(selectors, function(selector) {
-      console.log('SELCTOR', selector);
       var expressionKey = '#'+selector;
 
       query.ExpressionAttributeNames = query.ExpressionAttributeNames || {}
@@ -189,7 +188,10 @@ module.exports = function construct(config, log) {
       query.ExpressionAttributeNames[expressionKey] = selector;
       expression+=expressionKey+',';
     });
-    return expression.substr(0, expression.length-1);
+
+    var projectionExpression =  expression.substr(0, expression.length-1);
+    log.debug('dynamo-data-api.find(): projectionExpression', projectionExpression)
+    return projectionExpression
   }
 
   m.find = function(table, filter, selection) {
