@@ -170,14 +170,40 @@ module.exports = function construct(config, log) {
     return def.promise;
   };
 
+  function expressionify(query,commaSeperatedString) {
+    var selectors = commaSeperatedString.split(',');
+
+    if (selectors.length < 1) {
+      // TODO: replace with return robustError()
+      log.error('@BAD_PARAMETER', {details: {commaSeperatedString: commaSeperatedString}});
+      throw "dynamo-data-api.find(): selection should be a comma separated string";
+    }
+    var expression = "";
+
+    _.each(selectors, function(selector) {
+      console.log('SELCTOR', selector);
+      var expressionKey = '#'+selector;
+
+      query.ExpressionAttributeNames = query.ExpressionAttributeNames || {}
+
+      query.ExpressionAttributeNames[expressionKey] = selector;
+      expression+=expressionKey+',';
+    });
+    return expression.substr(0, expression.length-1);
+  }
+
   m.find = function(table, filter, selection) {
-    log.debug('Starting find...');
+    log.debug('Running dynamo-data-api.find()...');
     var query = {TableName: table};
+
     return m.init(table)
       .then(function(tableMeta) {
         log.debug('Processing filters...');
         docFilter(tableMeta, query, filter);
-        if (selection) query.ProjectionExpression = selection;
+
+        if (selection) {
+          query.ProjectionExpression = expressionify(query,selection);
+        }
 
         // optional. Checkout `QueryBuilder.js` for all supported comp operators.
         // .indexLessThan('GSI range key name', value)
@@ -331,17 +357,6 @@ module.exports = function construct(config, log) {
     return def.promise;
   };
 
-  /**
-   * executeQueryOne: resolves the first row returned from the query results.
-   * @param q
-   * @param resultAdapter - override the default result transform (which returns first row.)
-   * @returns {*}
-   */
-  function executeQueryOne(q) {
-    return executeQuery(q, function(result) {
-      return result.result[0];
-    });
-  }
 
   function executeQuery(q, resultAdapter) {
     log.debug('Executing query...');
