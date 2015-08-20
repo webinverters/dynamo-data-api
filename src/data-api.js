@@ -75,6 +75,8 @@ module.exports = function construct(config, log) {
    * @returns {*}
    */
   m.insert = function(table, params) {
+    _.omit(params, _.filter(_.keys(params), function(key) { return _.isUndefined(params[key]) }))
+
     log.log('dynamo.insert()', table, params);
     var def = p.defer();
     docClient.putItem({
