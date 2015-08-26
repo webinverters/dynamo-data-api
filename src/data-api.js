@@ -362,6 +362,7 @@ module.exports = function construct(config, log) {
     return def.promise;
   };
 
+  m.execute = execute;
 
   function executeQuery(q, resultAdapter) {
     log.debug('Executing query...');
@@ -379,7 +380,6 @@ module.exports = function construct(config, log) {
 
     return def.promise;
   }
-
 
   function execute(action, params, resultAdapter) {
     log.debug('Executing', action, '...');
