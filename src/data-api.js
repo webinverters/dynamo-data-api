@@ -276,7 +276,7 @@ module.exports = function construct(config, log) {
       TableName: table.tableName,
       AttributeDefinitions: [],
       KeySchema: [],
-      ProvisionedThroughput: {ReadCapacityUnits: 1, WriteCapacityUnits: 1}
+      ProvisionedThroughput: {ReadCapacityUnits: table.readUnits || 0, WriteCapacityUnits: table.writeUnits || 0}
     };
 
     var attributeNames = {};
@@ -380,9 +380,8 @@ module.exports = function construct(config, log) {
         if (seedData && seedData.length) return p.resolve().delay(10000)
       })
       .then(function() {
-        return p.map(seedData, function(d) {
-          return dynamo.insert(table.tableName,d);
-        });
+        if (seedData)
+          return dynamo.insertMany(table.tableName, seedData || []);
       })
   };
 
