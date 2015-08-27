@@ -30,7 +30,7 @@ describe('data-api', function() {
       tableName: 'test-table',
       keySchema: [{name: 'name', type:'S', keyType: 'HASH'}, {name: 'date', type:'S', keyType: 'RANGE'}]
     })
-      .delay(10000);
+    .delay(10000);
   });
 
   describe('insert(tableName, params)', function() {

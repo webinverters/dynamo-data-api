@@ -364,6 +364,28 @@ module.exports = function construct(config, log) {
 
   m.execute = execute;
 
+  m.seedTable = function (table, seedData) {
+    return dynamo.deleteTable(table.tableName)
+      .then(function() {
+        // if deleting was successful, better delay to wait for the tables to finish deleting so they can be recreated.
+        return p.resolve().delay(10000)
+      })
+      .catch(function(err) {
+        // intentionally swallow error
+      })
+      .then(function() {
+        return dynamo.createTable(table)
+      })
+      .then(function() {
+        if (seedData && seedData.length) return p.resolve().delay(10000)
+      })
+      .then(function() {
+        return p.map(seedData, function(d) {
+          return dynamo.insert(table.tableName,d);
+        });
+      })
+  };
+
   function executeQuery(q, resultAdapter) {
     log.debug('Executing query...');
     var def = p.defer();
