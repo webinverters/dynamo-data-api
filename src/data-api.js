@@ -365,7 +365,7 @@ module.exports = function construct(config, log) {
   m.execute = execute;
 
   m.seedTable = function (table, seedData) {
-    return dynamo.deleteTable(table.tableName)
+    return m.deleteTable(table.tableName)
       .then(function() {
         // if deleting was successful, better delay to wait for the tables to finish deleting so they can be recreated.
         return p.resolve().delay(10000)
@@ -374,14 +374,14 @@ module.exports = function construct(config, log) {
         // intentionally swallow error
       })
       .then(function() {
-        return dynamo.createTable(table)
+        return m.createTable(table)
       })
       .then(function() {
         if (seedData && seedData.length) return p.resolve().delay(10000)
       })
       .then(function() {
         if (seedData)
-          return dynamo.insertMany(table.tableName, seedData || []);
+          return m.insertMany(table.tableName, seedData || []);
       })
   };
 
