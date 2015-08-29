@@ -121,7 +121,6 @@ module.exports = function construct(config, log) {
       if (err) return def.reject(err);
       else     {
         def.resolve(data.Items);
-        console.log(data);
       }           // successful response
     });
     return def.promise;
@@ -276,7 +275,7 @@ module.exports = function construct(config, log) {
       TableName: table.tableName,
       AttributeDefinitions: [],
       KeySchema: [],
-      ProvisionedThroughput: {ReadCapacityUnits: table.readUnits || 0, WriteCapacityUnits: table.writeUnits || 0}
+      ProvisionedThroughput: {ReadCapacityUnits: table.readUnits || 1, WriteCapacityUnits: table.writeUnits || 1}
     };
 
     var attributeNames = {};
