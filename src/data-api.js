@@ -22,7 +22,7 @@ var p = require('bluebird'),
 
 
 module.exports = function construct(config, log) {
-  var m = {};
+  var m = new (function DynamoDataAPI(){})()
   config = config ? config : {};
   config = _.defaults(config, {});
 
