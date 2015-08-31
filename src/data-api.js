@@ -391,11 +391,12 @@ module.exports = function construct(config, log) {
 
   m.execute = execute;
 
-  m.seedTable = function (table, seedData) {
+  m.seedTable = function (table, seedData, delay) {
+    delay = delay || 12000;
     return m.deleteTable(table.tableName)
       .then(function() {
         // if deleting was successful, better delay to wait for the tables to finish deleting so they can be recreated.
-        return p.resolve().delay(10000)
+        return p.resolve().delay(delay)
       })
       .catch(function(err) {
         // intentionally swallow error
@@ -404,7 +405,7 @@ module.exports = function construct(config, log) {
         return m.createTable(table)
       })
       .then(function() {
-        if (seedData && seedData.length) return p.resolve().delay(10000)
+        if (seedData && seedData.length) return p.resolve().delay(delay)
       })
       .then(function() {
         if (seedData)
