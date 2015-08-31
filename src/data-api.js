@@ -31,7 +31,7 @@ module.exports = function construct(config, log) {
   var dynamite = new Dynamite.Client(config.aws);
 
   var aws = global.AWS || require('aws-sdk');
-  var awsClient = new aws.DynamoDB(); // May need to pass it apiVersion: {apiVersion: '2012-08-10'}
+  var awsClient = new aws.DynamoDB({apiVersion: '2012-08-10'}); // May need to pass it apiVersion: {apiVersion: '2012-08-10'}
   var dynamo = awsClient;
   var docClient = new require('dynamodb-doc').DynamoDB(awsClient);
 
