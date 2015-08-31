@@ -58,6 +58,16 @@ module.exports = function construct(config, log) {
       });
   };
 
+  m.updateDoc = function(params) {
+    params.UpdateExpression = "set #a = :x + :y";
+    //params.ConditionExpression = "#a < :MAX and Price = :correct";
+    //params.ExpressionAttributeNames = {"#a" : "Description"};
+    params.ExpressionAttributeValues = {":x" : 20,
+      ":y" : 45,
+      ":MAX" : 100,
+      ":correct" : "is right!!"};
+  }
+
   m.delete = function(table, filter) {
     var query = dynamite.deleteItem(table);
     return m.init(table)
@@ -77,15 +87,19 @@ module.exports = function construct(config, log) {
   m.insert = function(table, params) {
     _.omit(params, _.filter(_.keys(params), function(key) { return _.isUndefined(params[key]) }))
 
-    log.log('dynamo.insert()', table, params);
+    var ctx = log.context('dynamo.insert()', arguments, m);
+
     var def = p.defer();
     docClient.putItem({
       TableName: table,
       Item: params.item || params
     }, function(err, data) {
-      log.debug('dynamo-data-api.insert() RESULT:', {err:err, data:data});
-      if (err) return def.reject(err);
+      if (err) {
+        ctx.debug('DataError:', err)
+        return def.reject(err);
+      }
       else {
+        ctx.resolve(data);
         def.resolve(true);
       }
     });
