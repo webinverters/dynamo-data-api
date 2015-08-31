@@ -289,9 +289,15 @@ module.exports = function construct(config, log) {
       TableName: table.tableName,
       AttributeDefinitions: [],
       KeySchema: [],
-      ProvisionedThroughput: {ReadCapacityUnits: table.readUnits || 1, WriteCapacityUnits: table.writeUnits || 1}
+      ProvisionedThroughput: {ReadCapacityUnits: table.readUnits || 1, WriteCapacityUnits: table.writeUnits || 1},
     };
 
+    if (table.streams) {
+      opts.StreamSpecification={
+        StreamEnabled: true,
+        StreamViewType: table.streams
+      }
+    }
     var attributeNames = {};
 
     _.each(table.keySchema, function(attr) {
