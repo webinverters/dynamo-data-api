@@ -285,19 +285,15 @@ module.exports = function construct(config, log) {
   }
 
   m.createTable = function(table) {
+    var ctx = log.context('createTable()', table, m)
+
     var opts = {
       TableName: table.tableName,
       AttributeDefinitions: [],
       KeySchema: [],
-      ProvisionedThroughput: {ReadCapacityUnits: table.readUnits || 1, WriteCapacityUnits: table.writeUnits || 1},
+      ProvisionedThroughput: {ReadCapacityUnits: table.readUnits || 1, WriteCapacityUnits: table.writeUnits || 1}
     };
 
-    if (table.streams) {
-      opts.StreamSpecification={
-        StreamEnabled: true,
-        StreamViewType: table.streams
-      }
-    }
     var attributeNames = {};
 
     _.each(table.keySchema, function(attr) {
@@ -362,10 +358,21 @@ module.exports = function construct(config, log) {
       opts.GlobalSecondaryIndexes.push(gsi);
     });
 
+    if (table.streams) {
+      opts.StreamSpecification={
+        StreamEnabled: true,
+        StreamViewType: table.streams
+      }
+    }
+
     var def = p.defer();
 
     dynamo.createTable(opts, function(err, r) {
-      if (err) return def.reject(err);
+      if (err) {
+        ctx.error('Failed to create table.', err);
+        return def.reject(err);
+      }
+      ctx.resolve(r)
       return def.resolve(r);
     });
 
