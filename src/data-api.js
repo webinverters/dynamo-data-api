@@ -367,6 +367,7 @@ module.exports = function construct(config, log) {
 
     var def = p.defer();
 
+    ctx.debug('Calling dynamo.createTable()', opts)
     dynamo.createTable(opts, function(err, r) {
       if (err) {
         ctx.error('Failed to create table.', err);
