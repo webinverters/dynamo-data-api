@@ -226,7 +226,6 @@ module.exports = function construct(config, log) {
         // optional. Checkout `QueryBuilder.js` for all supported comp operators.
         // .indexLessThan('GSI range key name', value)
         return execute('query',query, function(result) {
-          console.log('RESULT', result);
           return result.Items[0];
         });
       });
