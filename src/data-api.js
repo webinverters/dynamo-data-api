@@ -437,7 +437,7 @@ module.exports = function construct(config, log) {
     log.debug('Executing Query:', params);
 
     docClient[action](params, function(err, result) {
-      console.log('DYNAMORESULT=', result);
+      log.debug('Dynamo Result:', {err: err, result: result})
       if (err) return def.reject(err);
       return def.resolve(resultAdapter ? resultAdapter(result) : result);
     });
@@ -458,7 +458,7 @@ module.exports = function construct(config, log) {
           log.debug('ADDING GSI.HASH', gsi.hash, gsi.indexName)
           query.setIndexName(gsi.indexName);
           query.setHashKey(key, val);
-        } else if (key==gsi.range.AttributeName) {
+        } else if (gsi.range && key==gsi.range.AttributeName) {
           if (hashUsed) gsiUsed = true;
           log.debug('ADDING GSI.RANGE', gsi.range, gsi.indexName)
           query.setRangeKey(key, val);
