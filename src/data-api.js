@@ -31,7 +31,7 @@ module.exports = function construct(config, log) {
   var dynamite = new Dynamite.Client(config.aws);
 
   var aws = global.AWS || require('aws-sdk');
-  var awsClient = new aws.DynamoDB({apiVersion: '2012-08-10'}); // May need to pass it apiVersion: {apiVersion: '2012-08-10'}
+  var awsClient = new aws.DynamoDB();
   var dynamo = awsClient;
   var docClient = new require('dynamodb-doc').DynamoDB(awsClient);
 
@@ -497,7 +497,7 @@ module.exports = function construct(config, log) {
           log.debug('ADDING GSI.HASH', gsi.hash, gsi.indexName)
           query.IndexName = gsi.indexName;
           addCondition(query, key, 'EQ', val);
-        } else if (key==gsi.range.AttributeName) {
+        } else if (gsi.range && key==gsi.range.AttributeName) {
           if (hashUsed) gsiUsed = true;
           log.debug('ADDING GSI.RANGE', gsi.range, gsi.indexName)
           addCondition(query, key, 'EQ', val)
