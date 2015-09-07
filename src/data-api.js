@@ -42,6 +42,7 @@ module.exports = function construct(config, log) {
   config.tables = {};
 
   m.update = function (table, filter, item) {
+    var ctx = log.method('update()', {table:table, filter:filter, item:item}, m)
     var query = dynamite.newUpdateBuilder(table);
     return m.init(table)
       .then(function(tableMeta) {
@@ -55,7 +56,7 @@ module.exports = function construct(config, log) {
         //  query.addToAttribute(key, val);
         //});
         return executeQuery(query);
-      });
+      })
   };
 
   m.updateDoc = function(params) {
@@ -115,14 +116,6 @@ module.exports = function construct(config, log) {
   };
 
   m.scan = function(table, params) {
-    //var query = dynamite.newScanBuilder(table);
-    //if(params.limit) {
-    //  query.setLimit(params.limit);
-    //}
-    //return executeQuery(query, function(result) {
-    //  return result.result;
-    //});
-
     params = _.defaults(params || {}, {
       limit: 1000
     });
@@ -466,7 +459,7 @@ module.exports = function construct(config, log) {
 
       if (!gsiUsed) {
         if (table.hash == key) {
-          log.log('SETTING HASH', key, val);
+          log('Setting Hash: ', {key:key, val:val});
           query.setHashKey(key, val);
         }
         if (table.range == key) {
