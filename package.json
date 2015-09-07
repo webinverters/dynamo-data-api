@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:webinverters/lib-base.git"
+    "url": "git@github.com:webinverters/dynamo-data-api.git"
   },
   "author": "Justin Mooser",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/webinverters/lib-base/issues"
+    "url": "https://github.com/webinverters/dynamo-data-api/issues"
   },
-  "homepage": "https://github.com/webinverters/lib-base",
+  "homepage": "https://github.com/webinverters/dynamo-data-api",
   "devDependencies": {
     "aws-sdk": "^2.1.41",
     "chai": "^1.x.x",
@@ -38,7 +38,7 @@
     "sinon-as-promised": "^2.0.3",
     "sinon-chai": "^2.6.0",
     "win-common": "0.0.38",
-    "win-with-logs": "0.0.41"
+    "win-with-logs": "git+https://github.com/webinverters/win-with-logs#v0.1.2"
   },
   "dependencies": {
     "bluebird": "^2.9.34",

@@ -26,7 +26,6 @@ module.exports = function construct(config, log) {
   config = config ? config : {};
   config = _.defaults(config, {});
 
-  log = log || {log: _.empty, error: _.empty};
   var Dynamite = require('dynamite');
   var dynamite = new Dynamite.Client(config.aws);
 
@@ -59,15 +58,21 @@ module.exports = function construct(config, log) {
       })
   };
 
-  m.updateDoc = function(params) {
-    params.UpdateExpression = "set #a = :x + :y";
-    //params.ConditionExpression = "#a < :MAX and Price = :correct";
-    //params.ExpressionAttributeNames = {"#a" : "Description"};
-    params.ExpressionAttributeValues = {":x" : 20,
-      ":y" : 45,
-      ":MAX" : 100,
-      ":correct" : "is right!!"};
-  }
+  m.update = function(table, filter, item) {
+    log.method('update()', {table:table, filter:filter, item:item}, m)
+    var params = {TableName: table, ExpressionAttributeNames:{},ExpressionAttributeValues: {}, Key: filter};
+
+    var updateExpression = "set "
+    _.each(item, function(val,key) {
+      var attrName = '#'+key, attrVal = ':'+key
+      updateExpression += attrName+' = '+attrVal+',';
+      params.ExpressionAttributeNames[attrName] = key;
+      params.ExpressionAttributeValues[attrVal] = val;
+    })
+    params.UpdateExpression = updateExpression.substr(0,updateExpression.length-1)
+
+    return execute('updateItem', params)
+  };
 
   m.delete = function(table, filter) {
     var query = dynamite.deleteItem(table);
@@ -396,9 +401,7 @@ module.exports = function construct(config, log) {
       .then(function() {
         return m.createTable(table)
       })
-      .then(function() {
-        if (seedData && seedData.length) return p.resolve().delay(delay)
-      })
+      .delay(delay)
       .then(function() {
         if (seedData)
           return m.insertMany(table.tableName, seedData || []);

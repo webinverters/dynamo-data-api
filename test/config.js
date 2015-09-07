@@ -19,7 +19,9 @@ config.aws ={
   //}
 };
 
+
 global.AWS = require('aws-sdk');
+console.log('Initializing AWS:', config.aws)
 AWS.config.update(config.aws);
 
 module.exports = config;
@@ -27,23 +29,5 @@ module.exports = config;
 global.log = require('win-with-logs')(
   {enableTrackedEvents: false, name: 'dynamo-data-api', env: 'test', app: 'dynamo-data-api', debug: true}
 );
-//global.log = {log: function(){}, error: console.log, debug: function(){}};
 
-var dynamo = require('../index')(global.config, global.log);
-
-global.seedTable = function (table, seedData) {
-  return dynamo.createTable(table)
-    .catch(function() {
-      return dynamo.deleteTable(table.tableName)
-        .delay(10000)
-    })
-    .then(function() {
-      return dynamo.createTable(table)
-    })
-    .catch(function(err){
-      console.log(err);
-    })
-    .then(function() {
-      return dynamo.insertMany(table.tableName, seedData || []);
-    });
-};
+global.dynamo = require('../index')(global.config, global.log);

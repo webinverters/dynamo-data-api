@@ -18,7 +18,7 @@ var ModuleUnderTest = require('./data-api');
 
 describe('data-api', function() {
   var m, item;
-  this.timeout(35000)
+  this.timeout(50000)
 
   beforeEach(function () {
     item = {name: 'testname', date: '1000' };
@@ -26,11 +26,10 @@ describe('data-api', function() {
   });
 
   before(function() {
-    return seedTable({
+    return dynamo.seedTable({
       tableName: 'test-table',
       keySchema: [{name: 'name', type:'S', keyType: 'HASH'}, {name: 'date', type:'S', keyType: 'RANGE'}]
-    })
-    .delay(10000);
+    }, null, 12000)
   });
 
   describe('insert(tableName, params)', function() {
