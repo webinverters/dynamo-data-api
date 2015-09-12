@@ -26,6 +26,10 @@ module.exports = function construct(config, log) {
   config = config ? config : {};
   config = _.defaults(config, {});
 
+  if (config.aws.accessKeyId && config.aws.secretAccessKey) {
+    console.log('config.aws', config.aws)
+    throw "Dynamo-Data-API: missing config.aws credentials."
+  }
   var Dynamite = require('dynamite');
   var dynamite = new Dynamite.Client(config.aws);
 
@@ -39,24 +43,6 @@ module.exports = function construct(config, log) {
    * @type {{}}
    */
   config.tables = {};
-
-  m.update = function (table, filter, item) {
-    var ctx = log.method('update()', {table:table, filter:filter, item:item}, m)
-    var query = dynamite.newUpdateBuilder(table);
-    return m.init(table)
-      .then(function(tableMeta) {
-        log.debug('Processing filters...');
-        processFilter(tableMeta, query, filter);
-        query.enableUpsert();
-        _.each(item, function(val, key) {
-          query.putAttribute(key, val);
-        });
-        //_.each(params.addItem, function(val, key) {
-        //  query.addToAttribute(key, val);
-        //});
-        return executeQuery(query);
-      })
-  };
 
   m.update = function(table, filter, item) {
     log.method('update()', {table:table, filter:filter, item:item}, m)
@@ -83,7 +69,13 @@ module.exports = function construct(config, log) {
       });
   };
 
-
+/**
+* DynamoDB fails for undefined and empty strings.
+*/
+function validateItem(item) {
+  // this removes undefined values from item.
+  return _.merge({},item)
+}
   /**
    * Supports params itself as "item" or params = { item: {item} }
    * @param table
@@ -95,10 +87,12 @@ module.exports = function construct(config, log) {
 
     var ctx = log.context('dynamo.insert()', arguments, m);
 
+    params.item = validateItem(params.item || params);
+
     var def = p.defer();
     docClient.putItem({
       TableName: table,
-      Item: params.item || params
+      Item: params.item
     }, function(err, data) {
       if (err) {
         ctx.debug('DataError:', err)
@@ -430,6 +424,7 @@ module.exports = function construct(config, log) {
     var def = p.defer();
 
     log.debug('Executing Query:', params);
+    params.Item = validateItem(params.item || params);
 
     docClient[action](params, function(err, result) {
       log.debug('Dynamo Result:', {err: err, result: result})
