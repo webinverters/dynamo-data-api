@@ -424,7 +424,7 @@ function validateItem(item) {
     var def = p.defer();
 
     log.debug('Executing Query:', params);
-    params.Item = validateItem(params.item || params);
+    params = validateItem(params.item || params);
 
     docClient[action](params, function(err, result) {
       log.debug('Dynamo Result:', {err: err, result: result})
