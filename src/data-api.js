@@ -26,7 +26,7 @@ module.exports = function construct(config, log) {
   config = config ? config : {};
   config = _.defaults(config, {});
 
-  if (config.aws.accessKeyId && config.aws.secretAccessKey) {
+  if (!config.aws.accessKeyId || !config.aws.secretAccessKey) {
     console.log('config.aws', config.aws)
     throw "Dynamo-Data-API: missing config.aws credentials."
   }
