@@ -61,12 +61,10 @@ module.exports = function construct(config, log) {
   };
 
   m.delete = function(table, filter) {
-    var query = dynamite.deleteItem(table);
-    return m.init(table)
-      .then(function(tableMeta) {
-        processFilter(tableMeta, query, filter);
-        return executeQuery(query);
-      });
+    var params = filter;
+    params.TableName = table;
+    log.debug('Deleting item...')
+    return execute('deleteItem', params)
   };
 
 /**
