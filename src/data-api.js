@@ -400,6 +400,9 @@ function validateItem(item) {
       })
       .delay(delay)
       .then(function() {
+        if(table.after) return table.after(result).delay(delay)
+      })
+      .then(function() {
         if (seedData)
           return m.insertMany(table.tableName, seedData || []);
       })
