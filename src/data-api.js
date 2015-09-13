@@ -400,7 +400,7 @@ function validateItem(item) {
       })
       .delay(delay)
       .then(function() {
-        if(table.after) return table.after(result).delay(delay)
+        if(table.after) return table.after(_result).delay(delay)
       })
       .then(function() {
         if (seedData)
