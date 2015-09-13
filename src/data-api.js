@@ -63,6 +63,7 @@ module.exports = function construct(config, log) {
   m.delete = function(table, filter) {
     var params = filter;
     params.TableName = table;
+    params.Key = filter;
     log.debug('Deleting item...')
     return execute('deleteItem', params)
   };
