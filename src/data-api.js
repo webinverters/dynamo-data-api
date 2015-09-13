@@ -61,10 +61,10 @@ module.exports = function construct(config, log) {
   };
 
   m.delete = function(table, filter) {
-    var params = filter;
+    var params = {};
     params.TableName = table;
     params.Key = filter;
-    log.debug('Deleting item...')
+    console.log('Deleting item...') // TODO: REMOVE
     return execute('deleteItem', params)
   };
 
