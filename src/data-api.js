@@ -383,6 +383,7 @@ function validateItem(item) {
 
   m.seedTable = function (table, seedData, delay) {
     delay = delay || 12000;
+    var _result;
     return m.deleteTable(table.tableName)
       .then(function() {
         // if deleting was successful, better delay to wait for the tables to finish deleting so they can be recreated.
@@ -394,10 +395,16 @@ function validateItem(item) {
       .then(function() {
         return m.createTable(table)
       })
+      .then(function(result) {
+        _result = result
+      })
       .delay(delay)
       .then(function() {
         if (seedData)
           return m.insertMany(table.tableName, seedData || []);
+      })
+      .then(function() {
+        return _result;
       })
   };
 
