@@ -23,7 +23,7 @@ var p = require('bluebird'),
 
 module.exports = function construct(config, log) {
   var m = new (function DynamoDataAPI(){})()
-  config = config ? config : {};
+  config = config ? _.cloneDeep(config) : {};  // do not allow config modifications. (Dynamite seems to be modifying the config here...)
   config = _.defaults(config, {});
 
   if (!config.aws.accessKeyId || !config.aws.secretAccessKey) {
@@ -432,11 +432,11 @@ function validateItem(item) {
     log.debug('Executing', action, '...');
     var def = p.defer();
 
-    log.debug('Executing Query:', params);
+    console.log('Executing Query:', params);
     params = validateItem(params.item || params);
 
     docClient[action](params, function(err, result) {
-      log.debug('Dynamo Result:', {err: err, result: result})
+      console.log('Dynamo Result:', {err: err, result: result})
       if (err) return def.reject(err);
       return def.resolve(resultAdapter ? resultAdapter(result) : result);
     });
