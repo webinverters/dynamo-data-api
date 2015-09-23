@@ -397,7 +397,7 @@ function validateItem(item) {
           // intentionally swallow error
         })
       };
-      if (noDelete) deleteTable = p.resolve()
+      if (noDelete) deleteTable = function() { return p.resolve() }
 
     return deleteTable(table)
       .then(function() {
