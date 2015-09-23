@@ -381,17 +381,25 @@ function validateItem(item) {
 
   m.execute = execute;
 
-  m.seedTable = function (table, seedData, delay) {
+  m.seedTable = function (table, seedData, delay, noDelete) {
     delay = delay || 12000;
     var _result;
-    return m.deleteTable(table.tableName)
-      .then(function() {
-        // if deleting was successful, better delay to wait for the tables to finish deleting so they can be recreated.
-        return p.resolve().delay(delay)
-      })
-      .catch(function(err) {
-        // intentionally swallow error
-      })
+
+    function noop(err) {log('Initialization log: ', {err:err})}
+
+    var deleteTable = function(table) {
+      return m.deleteTable(table.tableName)
+        .then(function() {
+          // if deleting was successful, better delay to wait for the tables to finish deleting so they can be recreated.
+          return p.resolve().delay(delay)
+        })
+        .catch(function(err) {
+          // intentionally swallow error
+        })
+      };
+      if (noDelete) deleteTable = p.resolve()
+
+    return deleteTable(table)
       .then(function() {
         return m.createTable(table)
       })
@@ -399,6 +407,7 @@ function validateItem(item) {
         _result = result
       })
       .delay(delay)
+      .catch(noop)
       .then(function() {
         if(table.after) return table.after(_result).delay(delay)
       })
@@ -409,6 +418,7 @@ function validateItem(item) {
       .then(function() {
         return _result;
       })
+      .catch(noop)
   };
 
   function executeQuery(q, resultAdapter) {
