@@ -29,11 +29,11 @@ module.exports = function construct(config, log) {
   log('DynamoDataAPI AWSConfig:', {aws: config.aws})
   config.aws.region = config.aws.region || 'us-east-1'
 
-  if (!config.aws.accessKeyId || !config.aws.secretAccessKey || ) {
+  if (!config.aws.accessKeyId || !config.aws.secretAccessKey) {
     console.log('config.aws', config.aws)
     throw "Dynamo-Data-API: missing config.aws credentials."
   }
-  
+
   var Dynamite = require('dynamite');
   var dynamite = new Dynamite.Client(config.aws);
 
