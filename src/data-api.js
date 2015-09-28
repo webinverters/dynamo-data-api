@@ -26,10 +26,14 @@ module.exports = function construct(config, log) {
   config = config ? _.cloneDeep(config) : {};  // do not allow config modifications. (Dynamite seems to be modifying the config here...)
   config = _.defaults(config, {});
 
-  if (!config.aws.accessKeyId || !config.aws.secretAccessKey) {
+  log('DynamoDataAPI AWSConfig:', {aws: config.aws})
+  config.aws.region = config.aws.region || 'us-east-1'
+
+  if (!config.aws.accessKeyId || !config.aws.secretAccessKey || ) {
     console.log('config.aws', config.aws)
     throw "Dynamo-Data-API: missing config.aws credentials."
   }
+  
   var Dynamite = require('dynamite');
   var dynamite = new Dynamite.Client(config.aws);
 
@@ -385,7 +389,12 @@ function validateItem(item) {
     delay = delay || 12000;
     var _result;
 
-    function noop(err) {log('Initialization log: ', {err:err})}
+    function failHandler(err) {
+      log('Initialization log: ', {err:err})
+      if (!noDelete) {
+        throw err
+      }
+    }
 
     var deleteTable = function(table) {
       return m.deleteTable(table.tableName)
@@ -407,7 +416,7 @@ function validateItem(item) {
         _result = result
       })
       .delay(delay)
-      .catch(noop)
+      .catch(failHandler)
       .then(function() {
         if(table.after) return table.after(_result).delay(delay)
       })
@@ -418,7 +427,7 @@ function validateItem(item) {
       .then(function() {
         return _result;
       })
-      .catch(noop)
+      .catch(failHandler)
   };
 
   function executeQuery(q, resultAdapter) {
@@ -551,3 +560,5 @@ function validateItem(item) {
 
   return m;
 };
+
+AAAAB3NzaC1yc2EAAAADAQABAAABAQCBUO2QfDVz34F+Ck8S9GvCPs7UNMowCgKnihu0grI46Z4mmt7lF8Y6/JT4N15qfvtaBNXcwQfDojytE1vrscAQsZHT5o3J1Fpr632ow+aZ2ktthEVygPpxX+2E8HMGMVpU/xiuHK5q/m3ORf2WQcDls59GDVPPAMSHVnjAOV0W3+KwZ1pmfd9zei2ELKBeieq+CyJxTyf2kOQX995aHVwCYaZZaQj4+Wky5sgd8kS6Qsat3sP7j2Gmw5qCv3NjBX0Uw+H3Tnp725yLE/eEZY8jCL8ZVHP4ovvG5zh2iUdObRvgTHZ+TW1NcOs8hA8qokzCNqYLgNm1+dA9lI2ALKsP
