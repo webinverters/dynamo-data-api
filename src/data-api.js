@@ -26,6 +26,8 @@ module.exports = function construct(config, log) {
   config = config ? _.cloneDeep(config) : {};  // do not allow config modifications. (Dynamite seems to be modifying the config here...)
   config = _.defaults(config, {});
 
+  console.log('LOG', log)
+  
   log('DynamoDataAPI AWSConfig:', {aws: config.aws})
   config.aws.region = config.aws.region || 'us-east-1'
 
