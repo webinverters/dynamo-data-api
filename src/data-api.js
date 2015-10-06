@@ -26,8 +26,6 @@ module.exports = function construct(config, log) {
   config = config ? _.cloneDeep(config) : {};  // do not allow config modifications. (Dynamite seems to be modifying the config here...)
   config = _.defaults(config, {});
 
-  console.log('LOG', log)
-  
   log('DynamoDataAPI AWSConfig:', {aws: config.aws})
   config.aws.region = config.aws.region || 'us-east-1'
 
@@ -94,13 +92,16 @@ function validateItem(item) {
 
     params.item = validateItem(params.item || params);
 
+    console.log('inserting:', params.item)
+
     var def = p.defer();
     docClient.putItem({
       TableName: table,
       Item: params.item
     }, function(err, data) {
       if (err) {
-        ctx.debug('DataError:', err)
+        console.log('DDB FAILED:', err)
+        ctx.error('DDB Insert Failed', err)
         return def.reject(err);
       }
       else {
