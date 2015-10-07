@@ -38,8 +38,10 @@ module.exports = function construct(config, log) {
   var dynamite = new Dynamite.Client(config.aws);
 
 
+
   var aws = global.AWS || require('aws-sdk');
   var awsClient = new aws.DynamoDB();
+  var ddb = new aws.DynamoDB.DocumentClient({service: awsClient})
   var dynamo = awsClient;
   var docClient = new require('dynamodb-doc').DynamoDB(awsClient);
 
@@ -138,6 +140,33 @@ function validateItem(item) {
     });
     return def.promise;
   };
+
+  m.query2 = function(table, filter, selection) {
+    var query = {
+      TableName: table,
+      Limit: filter.limit || 200,
+      IndexName: filter.indexName || undefined
+  //    IndexName: ''
+    }
+
+    query.KeyConditionExpression = filter.queryEx
+    query.ExpressionAttributeValues = filter.queryExVals
+    if (filter.sort == 'desc') query.ScanIndexForward = false
+    if (filter.sort == 'asc') query.ScanIndexForward = true
+
+    var def = p.defer()
+    ddb.query(query, function(err, data) {
+       if (err) {
+         console.log(err)
+         def.reject(err)
+       }
+       else {
+         console.log(data)
+         def.resolve(query)
+       }
+    })
+    return def.promise
+  }
 
   m.query = function(table, filter, selection) {
     log.debug('Starting query...');
