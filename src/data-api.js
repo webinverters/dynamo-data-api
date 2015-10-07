@@ -145,7 +145,8 @@ function validateItem(item) {
     var query = {
       TableName: table,
       Limit: filter.limit || 200,
-      IndexName: filter.indexName || undefined
+      IndexName: filter.indexName || undefined,
+      ExpressionAttributeNames: filter.queryAttrs
   //    IndexName: ''
     }
 
