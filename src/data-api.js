@@ -158,12 +158,11 @@ function validateItem(item) {
     var def = p.defer()
     ddb.query(query, function(err, data) {
        if (err) {
-         console.log(err)
+         log.error('QUERY_FAILED', {err:err, params: {table: table, filter:filter, selection:selection})
          def.reject(err)
        }
        else {
-         console.log(data)
-         def.resolve(query)
+         def.resolve(data)
        }
     })
     return def.promise
