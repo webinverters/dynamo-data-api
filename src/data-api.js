@@ -162,7 +162,7 @@ function validateItem(item) {
          def.reject(err)
        }
        else {
-         def.resolve(data)
+         def.resolve(data.Items)
        }
     })
     return def.promise
