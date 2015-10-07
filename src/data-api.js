@@ -158,7 +158,7 @@ function validateItem(item) {
     var def = p.defer()
     ddb.query(query, function(err, data) {
        if (err) {
-         log.error('QUERY_FAILED', {err:err, params: {table: table, filter:filter, selection:selection})
+         log.error('QUERY_FAILED', {err:err, params: {table: table, filter:filter, selection:selection}})
          def.reject(err)
        }
        else {
