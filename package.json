@@ -1,6 +1,6 @@
 {
   "name": "dynamo-data-api",
-  "version": "0.0.85",
+  "version": "0.0.86",
   "description": "Provides a simple js interface for dynamo.",
   "main": "index.js",
   "scripts": {
