@@ -333,10 +333,7 @@ function validateItem(item) {
         log('Deleting table...', {tableName: tableName})
         return m.deleteTable(tableName)
           .then(function() {
-            return m.waitForTable(tableName, 'tableNotExists')
-              .then(function() {
-                log('Successfully deleted table', {tableName: tableName})  // these are the types of logs I'd like to formalize...
-              })
+            log('Successfully deleted table', {tableName: tableName})  // these are the types of logs I'd like to formalize...
           })
           .catch(function(err) {
             log('Failed to delete table', {tableName: tableName})
@@ -477,7 +474,7 @@ function validateItem(item) {
     dynamo.deleteTable({TableName: tableName}, function(err, r) {
       if (err) return def.reject(err);
 
-      return m.waitForTable(table.tableName, 'tableNotExists')
+      return m.waitForTable(tableName, 'tableNotExists')
         .then(function() {
           return def.resolve(r);
         })
@@ -513,7 +510,6 @@ function validateItem(item) {
         .then(function(result) {
           _result = result
         })
-        .delay(delay)
         .catch(failHandler)
         .then(function() {
           if(table.after) return table.after(_result).delay(delay)
