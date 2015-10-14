@@ -500,36 +500,32 @@ function validateItem(item) {
 
     var deleteTable = function(table) {
       return m.deleteTable(table.tableName)
-        .then(function() {
-          // if deleting was successful, better delay to wait for the tables to finish deleting so they can be recreated.
-          return p.resolve().delay(delay)
-        })
         .catch(function(err) {
           // intentionally swallow error
         })
       };
       if (noDelete) deleteTable = function() { return p.resolve() }
 
-    return deleteTable(table)
-      .then(function() {
-        return m.createTable(table)
-      })
-      .then(function(result) {
-        _result = result
-      })
-      .delay(delay)
-      .catch(failHandler)
-      .then(function() {
-        if(table.after) return table.after(_result).delay(delay)
-      })
-      .then(function() {
-        if (seedData)
-          return m.insertMany(table.tableName, seedData || []);
-      })
-      .then(function() {
-        return _result;
-      })
-      .catch(failHandler)
+      return deleteTable(table)
+        .then(function() {
+          return m.createTable(table)
+        })
+        .then(function(result) {
+          _result = result
+        })
+        .delay(delay)
+        .catch(failHandler)
+        .then(function() {
+          if(table.after) return table.after(_result).delay(delay)
+        })
+        .then(function() {
+          if (seedData)
+            return m.insertMany(table.tableName, seedData || []);
+        })
+        .then(function() {
+          return _result;
+        })
+        .catch(failHandler)
   };
 
   function executeQuery(q, resultAdapter) {
