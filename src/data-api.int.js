@@ -145,9 +145,14 @@ describe('data-api', function() {
     });
   });
 
-  describe('query LESS_THAN_OR_EQUAL', function() {
-
-  });
+  describe('listTables()', function() {
+    it('fetches a list of all the tables', function() {
+      return m.listTables()
+        .then(function(result) {
+          console.log('Table List:', result)
+        })
+    })
+  })
 
   describe('getRowCount(tableName, filters)', function() {
     it('it returns the row count.', function() {

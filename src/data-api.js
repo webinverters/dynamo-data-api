@@ -37,10 +37,8 @@ module.exports = function construct(config, log) {
   var Dynamite = require('dynamite');
   var dynamite = new Dynamite.Client(config.aws);
 
-
-
   var aws = global.AWS || require('aws-sdk');
-  var awsClient = new aws.DynamoDB();
+  var awsClient = new aws.DynamoDB(config.aws);
   var ddb = new aws.DynamoDB.DocumentClient({service: awsClient})
   var dynamo = awsClient;
   var docClient = new require('dynamodb-doc').DynamoDB(awsClient);
@@ -311,6 +309,70 @@ function validateItem(item) {
       });
   }
 
+  m.listTables = function() {
+    var def = p.defer()
+    var params = {
+      //ExclusiveStartTableName: 'STRING_VALUE',
+      //Limit: 0
+    };
+    awsClient.listTables(params, function(err, data) {
+      if (err) {
+        log.error('List tables failed', err)
+        def.reject(err)
+      }
+      else {
+        def.resolve(data.TableNames)
+      }
+    })
+    return def.promise
+  }
+
+  m.deleteAllTables = function() {
+    return m.listTables()
+      .map(function(tableName) {
+        log('Deleting table...', {tableName: tableName})
+        return m.deleteTable(tableName)
+          .then(function() {
+            return m.waitForTable(tableName, 'tableNotExists')
+              .then(function() {
+                log('Successfully deleted table', {tableName: tableName})  // these are the types of logs I'd like to formalize...
+              })
+          })
+          .catch(function(err) {
+            log('Failed to delete table', {tableName: tableName})
+            throw log.errorReport('DELETE_TABLE_FAILED', {tableName: tableName}, err)
+          })
+      }, {concurrency: 8})
+  }
+
+  /**
+   * Wait for a given table to enter into a given state.
+   *
+   * @param  {[type]} tableName [description]
+   * @param  {[type]} state     'tableExists' || 'tableNotExists'
+   * @return {[type]}           [description]
+   */
+  m.waitForTable = function(tableName, state) {
+    var def = p.defer()
+
+    var params = {
+      TableName: tableName
+    };
+
+    awsClient.waitFor(state, params, function(err, data) {
+      if (err) {
+        console.log(err, err.stack) // an error occurred
+        def.reject(err)
+      }
+      else  {
+        console.log(data)           // successful response
+        def.resolve(data)
+      }
+    });
+
+    return def.promise
+  }
+
   m.createTable = function(table) {
     var ctx = log.context('createTable()', table, m)
 
@@ -400,8 +462,11 @@ function validateItem(item) {
         ctx.error('Failed to create table.', err);
         return def.reject(err);
       }
-      ctx.resolve(r)
-      return def.resolve(r);
+      return m.waitForTable(table.tableName, 'tableExists')
+        .then(function() {
+          ctx.resolve(r)
+          return def.resolve(r);
+        })
     });
 
     return def.promise;
@@ -411,7 +476,11 @@ function validateItem(item) {
     var def = p.defer();
     dynamo.deleteTable({TableName: tableName}, function(err, r) {
       if (err) return def.reject(err);
-      return def.resolve(r);
+
+      return m.waitForTable(table.tableName, 'tableNotExists')
+        .then(function() {
+          return def.resolve(r);
+        })
     });
     return def.promise;
   };
