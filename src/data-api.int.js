@@ -18,7 +18,7 @@ var ModuleUnderTest = require('./data-api');
 
 describe('data-api', function() {
   var m, item;
-  this.timeout(20000)
+  this.timeout(80000)
 
   beforeEach(function () {
     item = {name: 'testname', date: '1000' };

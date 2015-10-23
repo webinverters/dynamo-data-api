@@ -26,7 +26,7 @@ module.exports = function construct(config, log) {
   config = config ? _.cloneDeep(config) : {};  // do not allow config modifications. (Dynamite seems to be modifying the config here...)
   config = _.defaults(config, {});
 
-  log('DynamoDataAPI AWSConfig:', {aws: config.aws})
+  log.log('DynamoDataAPI AWSConfig:', {aws: config.aws})
   config.aws.region = config.aws.region || 'us-east-1'
 
   if (!config.aws.accessKeyId || !config.aws.secretAccessKey) {
@@ -50,7 +50,7 @@ module.exports = function construct(config, log) {
   config.tables = {};
 
   m.update = function(table, filter, item) {
-    log.method('update()', {table:table, filter:filter, item:item}, m)
+    log.goal('update()', {table:table, filter:filter, item:item}, m)
     var params = {TableName: table, ExpressionAttributeNames:{},ExpressionAttributeValues: {}, Key: filter};
 
     var updateExpression = "set "
@@ -106,7 +106,7 @@ function validateItem(item) {
         return def.reject(err);
       }
       else {
-        ctx.resolve(data);
+        ctx.result(data);
         def.resolve(true);
       }
     });
@@ -330,13 +330,14 @@ function validateItem(item) {
   m.deleteAllTables = function() {
     return m.listTables()
       .map(function(tableName) {
-        log('Deleting table...', {tableName: tableName})
+       log.log('Deleting table...', {tableName: tableName})
         return m.deleteTable(tableName)
           .then(function() {
-            log('Successfully deleted table', {tableName: tableName})  // these are the types of logs I'd like to formalize...
+           log.log('Successfully deleted table', {tableName: tableName})  // these are the types of logs I'd like to formalize...
           })
           .catch(function(err) {
-            log('Failed to delete table', {tableName: tableName})
+           log.log(
+            'Failed to delete table', {tableName: tableName})
             throw log.errorReport('DELETE_TABLE_FAILED', {tableName: tableName}, err)
           })
       }, {concurrency: 8})
@@ -461,8 +462,7 @@ function validateItem(item) {
       }
       return m.waitForTable(table.tableName, 'tableExists')
         .then(function() {
-          ctx.resolve(r)
-          return def.resolve(r);
+          return def.resolve(ctx.result(r));
         })
     });
 
@@ -470,15 +470,18 @@ function validateItem(item) {
   };
 
   m.deleteTable = function(tableName) {
+    log.log('deleteTable()', tableName)
     var def = p.defer();
     dynamo.deleteTable({TableName: tableName}, function(err, r) {
+      log.log('deleteTable response:', err, r)
+
       if (err) return def.reject(err);
 
       return m.waitForTable(tableName, 'tableNotExists')
         .then(function() {
           return def.resolve(r);
         })
-    });
+    })
     return def.promise;
   };
 
@@ -489,7 +492,7 @@ function validateItem(item) {
     var _result;
 
     function failHandler(err) {
-      log('Initialization log: ', {err:err})
+     log.log('Initialization log: ', {err:err})
       if (!noDelete) {
         throw err
       }
@@ -501,27 +504,28 @@ function validateItem(item) {
           // intentionally swallow error
         })
       };
-      if (noDelete) deleteTable = function() { return p.resolve() }
 
-      return deleteTable(table)
-        .then(function() {
-          return m.createTable(table)
-        })
-        .then(function(result) {
-          _result = result
-        })
-        .catch(failHandler)
-        .then(function() {
-          if(table.after) return table.after(_result).delay(delay)
-        })
-        .then(function() {
-          if (seedData)
-            return m.insertMany(table.tableName, seedData || []);
-        })
-        .then(function() {
-          return _result;
-        })
-        .catch(failHandler)
+    if (noDelete) deleteTable = function() { return p.resolve() }
+
+    return deleteTable(table)
+      .then(function() {
+        return m.createTable(table)
+      })
+      .then(function(result) {
+        _result = result
+      })
+      .catch(failHandler)
+      .then(function() {
+        if(table.after) return table.after(_result).delay(delay)
+      })
+      .then(function() {
+        if (seedData)
+          return m.insertMany(table.tableName, seedData || []);
+      })
+      .then(function() {
+        return _result;
+      })
+      .catch(failHandler)
   };
 
   function executeQuery(q, resultAdapter) {
@@ -579,7 +583,7 @@ function validateItem(item) {
 
       if (!gsiUsed) {
         if (table.hash == key) {
-          log('Setting Hash: ', {key:key, val:val});
+         log.log('Setting Hash: ', {key:key, val:val});
           query.setHashKey(key, val);
         }
         if (table.range == key) {

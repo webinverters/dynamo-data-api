@@ -8,6 +8,7 @@ unit:
 	${MOCHA} ${UNIT_TEST_FILES} ${ARGS}
 
 int:
+	echo "Dont forget to start the local dynamo.  java -Djava.library.path=./DynamoDBLocal_lib -jar DynamoDBLocal.jar -sharedDb --port 4567"
 	${MOCHA} ${INT_TEST_FILES} ${ARGS}
 
 coverage:
