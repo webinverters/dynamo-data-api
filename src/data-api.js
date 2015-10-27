@@ -571,7 +571,7 @@ function validateItem(item) {
           if (!gsi.range) {
             gsiUsed = true;
           }
-          log.debug('ADDING GSI.HASH', gsi.hash, gsi.indexName)
+          log.debug('ADDING GSI.HASH', {hash:gsi.hash, index:gsi.indexName})
           query.setIndexName(gsi.indexName);
           query.setHashKey(key, val);
         } else if (gsi.range && key==gsi.range.AttributeName) {
@@ -611,7 +611,7 @@ function validateItem(item) {
           if (!gsi.range) {
             gsiUsed = true;
           }
-          log.debug('ADDING GSI.HASH', gsi.hash, gsi.indexName)
+          log.debug('ADDING GSI.HASH', {hash:gsi.hash, index:gsi.indexName})
           query.IndexName = gsi.indexName;
           addCondition(query, key, 'EQ', val);
         } else if (gsi.range && key==gsi.range.AttributeName) {
