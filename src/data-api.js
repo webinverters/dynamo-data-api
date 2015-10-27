@@ -546,7 +546,7 @@ function validateItem(item) {
   }
 
   function execute(action, params, resultAdapter) {
-    log.debug('Executing', action, '...');
+    log.debug('Executing', action);
     var def = p.defer();
 
     console.log('Executing Query:', params);
