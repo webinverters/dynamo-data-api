@@ -89,7 +89,7 @@ function validateItem(item) {
   m.insert = function(table, params) {
     _.omit(params, _.filter(_.keys(params), function(key) { return _.isUndefined(params[key]) }))
 
-    var ctx = log.context('dynamo.insert()', arguments, m);
+    var ctx = log.method('dynamo.insert()', {table: table, params: params});
 
     params.item = validateItem(params.item || params);
 
@@ -372,7 +372,7 @@ function validateItem(item) {
   }
 
   m.createTable = function(table) {
-    var ctx = log.context('createTable()', table, m)
+    var ctx = log.method('dynamo.createTable()', {table: table})
 
     var opts = {
       TableName: table.tableName,
@@ -616,7 +616,7 @@ function validateItem(item) {
           addCondition(query, key, 'EQ', val);
         } else if (gsi.range && key==gsi.range.AttributeName) {
           if (hashUsed) gsiUsed = true;
-          log.debug('ADDING GSI.RANGE', gsi.range, gsi.indexName)
+          log.debug('ADDING GSI.RANGE', {range:gsi.range, index:gsi.indexName})
           addCondition(query, key, 'EQ', val)
         }
       });
