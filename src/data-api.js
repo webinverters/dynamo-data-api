@@ -625,7 +625,7 @@ function validateItem(item) {
 
       if (!gsiUsed) {
         if (table.hash == key) {
-          log.debug('SETTING HASH', key, val);
+          log.debug('SETTING HASH', {key:key, val:val});
           addCondition(query, key, 'EQ', val)
         }
         if (table.range == key) {
