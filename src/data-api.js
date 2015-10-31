@@ -91,16 +91,16 @@ function validateItem(item) {
   m.insert = function(table, params) {
     _.omit(params, _.filter(_.keys(params), function(key) { return _.isUndefined(params[key]) }))
 
-    var ctx = log.method('dynamo.insert()', {table: table, params: params});
+    var ctx = log.method('dynamo.insert()', {table: table, params: params})
 
-    params.item = validateItem(params.item || params);
+    var item = validateItem(params.item || params);
 
     console.log('inserting:', params.item)
 
     var def = p.defer();
     docClient.putItem({
       TableName: table,
-      Item: params.item
+      Item: item
     }, function(err, data) {
       if (err) {
         console.log('DDB FAILED:', err)
