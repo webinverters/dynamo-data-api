@@ -634,7 +634,7 @@ function validateItem(item) {
               addCondition(query, key, 'LTE', val['LESS_THAN_OR_EQUAL']);
             }
           } else {
-            log.debug('SETTING RANGE:', key,val);
+            log.debug('SETTING RANGE:', {key:key,val:val});
             addCondition(query, key, 'EQ', val);
           }
         }
