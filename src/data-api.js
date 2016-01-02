@@ -169,29 +169,29 @@ function validateItem(item) {
   }
 
   m.query = function(table, filter, selection) {
-    log.debug('Starting query...');
-    var query = dynamite.newQueryBuilder(table);
+    log.debug('Starting query...')
+    var query = dynamite.newQueryBuilder(table)
     return m.init(table)
       .then(function(tableMeta) {
-        log.debug('Processing filters...');
-        processFilter(tableMeta, query, filter);
+        log.debug('Processing filters...', {tableMeta: tableMeta, filters: filter})
+        processFilter(tableMeta, query, filter)
         if (filter.limit) {
-          query.setLimit(filter.limit);
+          query.setLimit(filter.limit)
         }
         if (filter.sort == 'desc') {
-          query.scanBackward();
+          query.scanBackward()
         }
         if (filter.sort == 'asc') {
-          query.scanForward();
+          query.scanForward()
         }
 
-        if (selection) query.selectAttributes(selection);
+        if (selection) query.selectAttributes(selection)
 
         // optional. Checkout `QueryBuilder.js` for all supported comp operators.
         // .indexLessThan('GSI range key name', value)
         return executeQuery(query, function(result) {
-          if (result.result && result.result.length > 0) return result.result;
-          else return null;
+          if (result.result && result.result.length > 0) return result.result
+          else return null
         });
       });
   };
