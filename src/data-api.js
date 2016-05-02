@@ -1,315 +1,55 @@
 /**
- * @module data-api
- * @summary: This module's purpose is to: abstract the underlying persistence layer
- * from the business logic.
- *
- * @description:
- * If you don't always use DynamoDB here is where that would be abstracted.  Conditionals on tableName
- * and other parameters would route data through a different transport to be stored or retrieved from
- * a different persistent medium.  In that case, this should be moved to a module "dynamo" and
- * included here seperately to abstract the dynamo specific logic and let this module simply
- * call the correct "database driver" methods and return results.
- *
- * Author: Justin Mooser
- * Created On: 2015-07-06.
- * @license Apache-2.0
- */
+* @Author: Robustly.io <Auto>
+* @Date:   2016-03-16T02:19:09-04:00
+* @Email:  m0ser@robustly.io
+* @Last modified by:   Auto
+* @Last modified time: 2016-05-01T23:04:43-04:00
+* @License: Apache-2.0
+*/
 
 "use strict";
 
 var p = require('bluebird'),
-  _ = require('lodash');
-
+  _ = require('lodash'),
+  aws = require('aws-sdk');
 
 module.exports = function construct(config, log) {
-  var m = new (function DynamoDataAPI(){})()
-  config = config ? _.cloneDeep(config) : {};  // do not allow config modifications. (Dynamite seems to be modifying the config here...)
-  config = _.defaults(config, {});
-
-  log = log.module('dynamodb')
-
-  log.log('DynamoDataAPI AWSConfig:', {aws: config.aws})
-  config.aws.region = config.aws.region || 'us-east-1'
-
-  if (!config.aws.accessKeyId || !config.aws.secretAccessKey) {
-    console.log('config.aws', config.aws)
+  if (!config.aws || !config.aws.accessKeyId || !config.aws.secretAccessKey) {
+    log.error('Missing aws config', config.aws)
     throw "Dynamo-Data-API: missing config.aws credentials."
   }
+  config.aws.region = config.aws.region || 'us-east-1'
 
-  var Dynamite = require('dynamite');
-  var dynamite = new Dynamite.Client(config.aws);
+  var m = new (function DynamoDataAPI(){})(),
+    _log = log.module('dynamo-data-api')
 
-  var aws = global.AWS || require('aws-sdk');
-  var awsClient = new aws.DynamoDB(config.aws);
-  var ddb = new aws.DynamoDB.DocumentClient({service: awsClient})
-  var dynamo = awsClient;
-  var docClient = new require('dynamodb-doc').DynamoDB(awsClient);
+  var awsClient = new aws.DynamoDB(config.aws),
+    ddb = new aws.DynamoDB.DocumentClient({service: awsClient})
 
-  /**
-   * Stores data about tables in the database so that keys and indexes can be queried effectively.
-   * @type {{}}
-   */
-  config.tables = {};
-
-  m.update = function(table, filter, item) {
-    log.goal('update()', {table:table, filter:filter, item:item}, m)
-    var params = {TableName: table, ExpressionAttributeNames:{},ExpressionAttributeValues: {}, Key: filter};
-
-    var updateExpression = "set "
-    _.each(item, function(val,key) {
-      var attrName = '#'+key, attrVal = ':'+key
-      updateExpression += attrName+' = '+attrVal+',';
-      params.ExpressionAttributeNames[attrName] = key;
-      params.ExpressionAttributeValues[attrVal] = val;
-    })
-    params.UpdateExpression = updateExpression.substr(0,updateExpression.length-1)
-
-    return execute('updateItem', params)
+  m.update = function(params, options) {
+    var log = _log.goal('update()', {params: params, options: options})
+    return p.resolve()
   };
 
-  m.delete = function(table, filter) {
-    var params = {};
-    params.TableName = table;
-    params.Key = filter;
-    console.log('Deleting item...') // TODO: REMOVE
-    return execute('deleteItem', params)
+  m.delete = function(params, options) {
+    var log = _log.goal('delete()',  {params: params, options: options})
+    return p.resolve()
   };
 
-/**
-* DynamoDB fails for undefined and empty strings.
-*/
-function validateItem(item) {
-  // this removes undefined values from item.
-  return _.merge({},item)
-}
   /**
    * Supports params itself as "item" or params = { item: {item} }
    * @param table
    * @param params
    * @returns {*}
    */
-  m.insert = function(table, params) {
-    _.omit(params, _.filter(_.keys(params), function(key) { return _.isUndefined(params[key]) }))
-
-    var ctx = log.method('dynamo.insert()', {table: table, params: params})
-
-    var item = validateItem(params.item || params);
-
-    console.log('inserting:', params.item)
-
-    var def = p.defer();
-    docClient.putItem({
-      TableName: table,
-      Item: item
-    }, function(err, data) {
-      if (err) {
-        console.log('DDB FAILED:', err)
-        ctx.error('DDB Insert Failed', err)
-        return def.reject(err);
-      }
-      else {
-        ctx.result(data);
-        def.resolve(true);
-      }
-    });
-    return def.promise;
+  m.insert = function(params, options) {
+    var log = _log.goal('insert()',  {params: params, options: options})
+    return p.resolve()
   };
-  m.save = m.insert;
-
-  m.insertMany = function(table, items) {
-    // TODO: implement using BatchWriteItem
-    return p.map(items, function(item) {
-      return m.insert(table, item);
-    });
-  };
-
-  m.scan = function(table, params) {
-    params = _.defaults(params || {}, {
-      limit: 1000
-    });
-
-    var def = p.defer();
-    docClient.scan({
-      TableName: table,
-      Limit: params.limit
-    }, function(err, data) {
-      if (err) return def.reject(err);
-      else     {
-        def.resolve(data.Items);
-      }           // successful response
-    });
-    return def.promise;
-  };
-
-  m.query2 = function(table, filter, selection) {
-    var query = {
-      TableName: table,
-      Limit: filter.limit || 200,
-      IndexName: filter.indexName || undefined,
-      ExpressionAttributeNames: filter.queryAttrs
-  //    IndexName: ''
-    }
-
-    query.KeyConditionExpression = filter.queryEx
-    query.ExpressionAttributeValues = filter.queryExVals
-    if (filter.sort == 'desc') query.ScanIndexForward = false
-    if (filter.sort == 'asc') query.ScanIndexForward = true
-
-    var def = p.defer()
-    ddb.query(query, function(err, data) {
-       if (err) {
-         log.error('QUERY_FAILED', {err:err, params: {table: table, filter:filter, selection:selection}})
-         def.reject(err)
-       }
-       else {
-         def.resolve(data.Items)
-       }
-    })
-    return def.promise
-  }
 
   m.query = function(table, filter, selection) {
-    log.debug('Starting query...')
-    var query = dynamite.newQueryBuilder(table)
-    return m.init(table)
-      .then(function(tableMeta) {
-        log.debug('Processing filters...', {tableMeta: tableMeta, filters: filter})
-        processFilter(tableMeta, query, filter)
-        if (filter.limit) {
-          query.setLimit(filter.limit)
-        }
-        if (filter.sort == 'desc') {
-          query.scanBackward()
-        }
-        if (filter.sort == 'asc') {
-          query.scanForward()
-        }
 
-        if (selection) query.selectAttributes(selection)
-
-        // optional. Checkout `QueryBuilder.js` for all supported comp operators.
-        // .indexLessThan('GSI range key name', value)
-        return executeQuery(query, function(result) {
-          if (result.result && result.result.length > 0) return result.result
-          else return null
-        });
-      });
   };
-
-  m.getRowCount = function(table, params) {
-    log.debug('Starting getRowCount()...', table, params);
-
-    var def = p.defer();
-
-    awsClient.scan({
-      TableName: table
-    }, function(err, result) {
-      if (err) {
-        def.reject(err);
-      }
-      else {
-        def.resolve(result.Count);
-      }
-    });
-    return def.promise;
-  };
-
-  function expressionify(query,commaSeperatedString) {
-    var selectors = commaSeperatedString.split(',');
-
-    if (selectors.length < 1) {
-      // TODO: replace with return robustError()
-      log.error('@BAD_PARAMETER', {details: {commaSeperatedString: commaSeperatedString}});
-      throw "dynamo-data-api.find(): selection should be a comma separated string";
-    }
-    var expression = "";
-
-    _.each(selectors, function(selector) {
-      var expressionKey = '#'+selector;
-
-      query.ExpressionAttributeNames = query.ExpressionAttributeNames || {}
-
-      query.ExpressionAttributeNames[expressionKey] = selector;
-      expression+=expressionKey+',';
-    });
-
-    var projectionExpression =  expression.substr(0, expression.length-1);
-    log.debug('dynamo-data-api.find(): projectionExpression', projectionExpression)
-    return projectionExpression
-  }
-
-  m.find = function(table, filter, selection) {
-    log.debug('Running dynamo-data-api.find()...');
-    var query = {TableName: table};
-
-    return m.init(table)
-      .then(function(tableMeta) {
-        log.debug('Processing filters...');
-        docFilter(tableMeta, query, filter);
-
-        if (selection) {
-          query.ProjectionExpression = expressionify(query,selection);
-        }
-
-        // optional. Checkout `QueryBuilder.js` for all supported comp operators.
-        // .indexLessThan('GSI range key name', value)
-        return execute('query',query, function(result) {
-          return result.Items[0];
-        });
-      });
-  };
-
-  m.init = function(tableName) {
-    var def = p.defer();
-    if (!config.tables[tableName]) {
-      recoverInfoAboutTable(tableName)
-        .then(function(result) {
-          return def.resolve(result);
-        })
-        .fail(function(err) {
-          return def.reject(err);
-        });
-      return def.promise;
-    }
-    return p.resolve(config.tables[tableName]);
-  };
-
-  function recoverInfoAboutTable(tableName) {
-    log.log('describeTable: ', tableName);
-    return dynamite.describeTable(tableName)
-      .execute()
-      .then(function(result) {
-        var table = {gsi:[]};
-        //GlobalSecondaryIndexes:
-        //  [ { IndexName: 'userId-index',
-        //    IndexSizeBytes: 0,
-        //    IndexStatus: 'ACTIVE',
-        //    ItemCount: 0,
-        //    KeySchema: [Object],
-        //    Projection: [Object],
-        //    ProvisionedThroughput: [Object] } ],
-        //    ItemCount: 0,
-        //  KeySchema: [ { AttributeName: 'email', KeyType: 'HASH' } ],
-        //log.log('Table Meta:', result.Table.GlobalSecondaryIndexes[0]);
-        table.hash = _.result(_.find(result.Table.KeySchema, {KeyType: 'HASH'}), 'AttributeName');
-        table.range = _.result(_.find(result.Table.KeySchema, {KeyType: 'RANGE'}), 'AttributeName');
-        _.each(result.Table.GlobalSecondaryIndexes, function(index) {
-          var gsi = {indexName: index.IndexName };
-          _.each(index.KeySchema, function(key) {
-            if (key.KeyType == 'HASH') {
-              gsi.hash = key;
-            } else if (key.KeyType == 'RANGE') {
-              gsi.range = key;
-            }
-          });
-          table.gsi.push(gsi);
-        });
-
-        config.tables[tableName] = table;
-        log.log('MetaTable:', JSON.stringify(table));
-        return table;
-      });
-  }
 
   m.listTables = function() {
     var def = p.defer()
@@ -374,7 +114,7 @@ function validateItem(item) {
   }
 
   m.createTable = function(table) {
-    var ctx = log.method('dynamo.createTable()', {table: table})
+    var ctx = _log.method('createTable()', {table: table})
 
     var opts = {
       TableName: table.tableName,
@@ -456,8 +196,8 @@ function validateItem(item) {
 
     var def = p.defer();
 
-    ctx.debug('Calling dynamo.createTable()', opts)
-    dynamo.createTable(opts, function(err, r) {
+    ctx.debug('Calling createTable', opts)
+    awsClient.createTable(opts, function(err, r) {
       if (err) {
         ctx.error('Failed to create table.', err);
         return def.reject(err);
@@ -474,7 +214,7 @@ function validateItem(item) {
   m.deleteTable = function(tableName) {
     log.log('deleteTable()', tableName)
     var def = p.defer();
-    dynamo.deleteTable({TableName: tableName}, function(err, r) {
+    awsClient.deleteTable({TableName: tableName}, function(err, r) {
       log.log('deleteTable response:', err, r)
 
       if (err) return def.reject(err);
@@ -529,134 +269,6 @@ function validateItem(item) {
       })
       .catch(failHandler)
   };
-
-  function executeQuery(q, resultAdapter) {
-    log.debug('Executing query...');
-    var def = p.defer();
-    q.execute()
-      .then(function(result) {
-        log.debug('Query finished:', {QUERY_RESULT: result});
-        if (resultAdapter) def.resolve(resultAdapter(result));
-        return def.resolve(result);
-      })
-      .fail(function(err) {
-        log.debug('Query failed.', err);
-        return def.reject(err);
-      });
-
-    return def.promise;
-  }
-
-  function execute(action, params, resultAdapter) {
-    log.debug('Executing', action);
-    var def = p.defer();
-
-    console.log('Executing Query:', params);
-    params = validateItem(params.item || params);
-
-    docClient[action](params, function(err, result) {
-      console.log('Dynamo Result:', {err: err, result: result})
-      if (err) return def.reject(err);
-      return def.resolve(resultAdapter ? resultAdapter(result) : result);
-    });
-
-    return def.promise;
-  }
-
-  function processFilter(table, query, filter) {
-    _.each(filter, function(val, key) {
-      var gsiUsed = false;
-      _.each(table.gsi, function(gsi) {
-        var hashUsed=false;
-        if (key == gsi.hash.AttributeName) {
-          hashUsed = true;
-          if (!gsi.range) {
-            gsiUsed = true;
-          }
-          log.debug('ADDING GSI.HASH', {hash:gsi.hash, index:gsi.indexName})
-          query.setIndexName(gsi.indexName);
-          query.setHashKey(key, val);
-        } else if (gsi.range && key==gsi.range.AttributeName) {
-          if (hashUsed) gsiUsed = true;
-          log.debug('ADDING GSI.RANGE', gsi.range, gsi.indexName)
-          query.setRangeKey(key, val);
-        }
-      });
-
-      if (!gsiUsed) {
-        if (table.hash == key) {
-         log.log('Setting Hash: ', {key:key, val:val});
-          query.setHashKey(key, val);
-        }
-        if (table.range == key) {
-          if (_.isObject(val)) {
-            if (val['LESS_THAN_OR_EQUAL']) {
-              query.indexLessThanEqual(key, val['LESS_THAN_OR_EQUAL']);
-            }
-          } else {
-            query.setRangeKey(key, val);
-          }
-        }
-      }
-      // optional. Checkout `QueryBuilder.js` for all supported comp operators.
-      // .indexLessThan('GSI range key name', value)
-    });
-  }
-
-  function docFilter(table, query, filter) {
-    _.each(filter, function(val, key) {
-      var gsiUsed = false;
-      _.each(table.gsi, function(gsi) {
-        var hashUsed=false;
-        if (key == gsi.hash.AttributeName) {
-          hashUsed = true;
-          if (!gsi.range) {
-            gsiUsed = true;
-          }
-          log.debug('ADDING GSI.HASH', {hash:gsi.hash, index:gsi.indexName})
-          query.IndexName = gsi.indexName;
-          addCondition(query, key, 'EQ', val);
-        } else if (gsi.range && key==gsi.range.AttributeName) {
-          if (hashUsed) gsiUsed = true;
-          log.debug('ADDING GSI.RANGE', {range:gsi.range, index:gsi.indexName})
-          addCondition(query, key, 'EQ', val)
-        }
-      });
-
-      if (!gsiUsed) {
-        if (table.hash == key) {
-          log.debug('SETTING HASH', {key:key, val:val});
-          addCondition(query, key, 'EQ', val)
-        }
-        if (table.range == key) {
-          if (_.isObject(val)) {
-            if (val['LESS_THAN_OR_EQUAL']) {
-              addCondition(query, key, 'LTE', val['LESS_THAN_OR_EQUAL']);
-            }
-          } else {
-            log.debug('SETTING RANGE:', {key:key,val:val});
-            addCondition(query, key, 'EQ', val);
-          }
-        }
-      }
-    });
-}
-
-  // assumes all the words are reserved and uses attribute names for everything...
-  function addCondition(query, key, operator, val) {
-    var expressionKey = '#'+key;
-    var expressionVal = ':'+key;
-
-    query.ExpressionAttributeNames = query.ExpressionAttributeNames || {}
-    query.ExpressionAttributeValues= query.ExpressionAttributeValues || {}
-    if (!query.ExpressionAttributeNames[expressionKey]) {
-      query.ExpressionAttributeNames[expressionKey] = key;
-      query.ExpressionAttributeValues[expressionVal] = val;
-      if (query.KeyConditionExpression)
-        query.KeyConditionExpression += " and " + expressionKey + " = " + expressionVal
-      else query.KeyConditionExpression = expressionKey + " = " + expressionVal
-    }
-  }
 
   return m;
 };
