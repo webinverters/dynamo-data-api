@@ -1,10 +1,23 @@
+/**
+* @summary: ______.
+* @description: _____.
+*
+* @author: Robustly.io <m0ser>
+* @date:   2016-02-28T01:17:12-05:00
+* @email:  m0ser@robustly.io
+* @lastAuthor:   Auto
+* @lastModified: 2016-02-28T05:10:45-05:00
+* @license: Apache-2.0
+*/
+
+
+
 // dependencies
 var gulp = require('gulp'),
     git = require('gulp-git'),
     bump = require('gulp-bump'),
     filter = require('gulp-filter'),
-    tag_version = require('gulp-tag-version'),
-    jsdoc = require("gulp-jsdoc");
+    tag_version = require('gulp-tag-version')
 
 /**
  * Bumping version number and tagging the repository with it.
@@ -35,18 +48,6 @@ function inc(importance) {
     // **tag it in the repository**
       .pipe(tag_version());
 }
-
-gulp.task('generate-docs', function() {
-  return gulp.src("./src/*.js")
-    .pipe(jsdoc.parser({
-      name: 'Default Name Docs',
-      description: 'Default Docs Description',
-      version: require('./package.json').version,
-      licenses: [],
-      plugins: ['plugins/markdown']
-    }, 'jsdoc.json'))
-    .pipe(jsdoc.generator('./docs'));
-});
 
 gulp.task('patch', function() { return inc('patch'); });
 gulp.task('feature', function() { return inc('minor'); });

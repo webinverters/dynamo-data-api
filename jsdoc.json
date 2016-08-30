@@ -1,0 +1,32 @@
+{
+    "tags": {
+        "allowUnknownTags": true,
+        "dictionaries": ["jsdoc","closure"]
+    },
+    "source": {
+        "include": [ "index.js", "./lib", "README.md" ],
+        "includePattern": ".+\\.js(doc)?$",
+        "excludePattern": "(^|\\/|\\\\)_"
+    },
+    "plugins": ["plugins/markdown"],
+    "templates": {
+        "systemName"            : "module-base",
+        "footer"                : "",
+        "copyright"             :  "Copyright Robustly.io Inc. All Rights Reserved.",
+        "includeDate"           : true,
+        "linenums"              : true,
+        "outputSourceFiles"     : true,
+        "outputSourcePath"      : true
+    },
+  	"markdown": {
+  		"parser": "gfm",
+  		"hardwrap": true,
+  		"tags": ["examples"]
+  	},
+    "opts": {
+      "template": "./node_modules/ink-docstrap/template",
+      "encoding": "utf8",
+      "destination": "./_docs/",
+      "recurse": true
+    }
+}
